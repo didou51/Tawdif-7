@@ -16,32 +16,38 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Build APK
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        cmdline-tools-version: 9477386
+
+    - name: Install build tools
       run: |
-        sudo apt-get install -y aapt android-sdk zipalign apksigner 2>/dev/null || true
-        pip install buildozer 2>/dev/null || true
-        
-        # Use gradle with wrapper
-        wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip
-        unzip -q gradle-8.4-bin.zip
-        export PATH=$PATH:$PWD/gradle-8.4/bin
-        
+        sdkmanager "build-tools;34.0.0" "platforms;android-34"
+
+    - name: Create project
+      run: |
         mkdir -p app/src/main/java/dz/tawdhif/app
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/assets
-        
-        find . -name "*.html" | head -1 | xargs -I{} cp {} app/src/main/assets/index.html 2>/dev/null || echo "<h1>تَوظِيف</h1>" > app/src/main/assets/index.html
-        
+
+        find . -name "*.html" | grep -v node_modules | head -1 | xargs -I{} cp {} app/src/main/assets/index.html 2>/dev/null || echo "<h1>تَوظِيف</h1>" > app/src/main/assets/index.html
+
         cat > app/src/main/AndroidManifest.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dz.tawdhif.app">
         <uses-permission android:name="android.permission.INTERNET"/>
-        <application android:label="تَوظِيف" android:hardwareAccelerated="true" android:usesCleartextTraffic="true" android:supportsRtl="true">
+        <application android:label="تَوظِيف" android:hardwareAccelerated="true" android:usesCleartextTraffic="true">
         <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
-        <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
-        </activity></application></manifest>
+        <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+        </intent-filter>
+        </activity>
+        </application>
+        </manifest>
         EOF
-        
+
         cat > app/src/main/java/dz/tawdhif/app/MainActivity.java << 'EOF'
         package dz.tawdhif.app;
         import android.app.Activity;
@@ -60,14 +66,36 @@ jobs:
                 setContentView(w);
                 w.loadUrl("file:///android_asset/index.html");
             }
-            public void onBackPressed() { if(w.canGoBack()) w.goBack(); else super.onBackPressed(); }
+            public void onBackPressed() {
+                if(w.canGoBack()) w.goBack();
+                else super.onBackPressed();
+            }
         }
         EOF
-        
+
         cat > app/src/main/res/values/strings.xml << 'EOF'
-        <?xml version="1.0" encoding="utf-8"?><resources><string name="app_name">تَوظِيف</string></resources>
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources><string name="app_name">تَوظِيف</string></resources>
         EOF
-        
+
+        cat > settings.gradle << 'EOF'
+        pluginManagement {
+            repositories { google(); mavenCentral(); gradlePluginPortal() }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories { google(); mavenCentral() }
+        }
+        rootProject.name = "tawdhif"
+        include ':app'
+        EOF
+
+        cat > build.gradle << 'EOF'
+        plugins {
+            id 'com.android.application' version '8.2.2' apply false
+        }
+        EOF
+
         cat > app/build.gradle << 'EOF'
         plugins { id 'com.android.application' }
         android {
@@ -85,39 +113,25 @@ jobs:
                 targetCompatibility JavaVersion.VERSION_11
             }
         }
-        dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
-        EOF
-        
-        cat > build.gradle << 'EOF'
-        plugins { id 'com.android.application' version '8.2.0' apply false }
-        EOF
-        
-        cat > settings.gradle << 'EOF'
-        pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-        dependencyResolutionManagement {
-            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-            repositories { google(); mavenCentral() }
+        dependencies {
+            implementation 'androidx.appcompat:appcompat:1.6.1'
         }
-        rootProject.name = "tawdhif"
-        include ':app'
         EOF
-        
+
         mkdir -p gradle/wrapper
         cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
         distributionBase=GRADLE_USER_HOME
         distributionPath=wrapper/dists
-        distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+        distributionUrl=https\://services.gradle.org/distributions/gradle-8.6-bin.zip
         zipStoreBase=GRADLE_USER_HOME
         zipStorePath=wrapper/dists
         EOF
-        
-        cat > gradlew << 'EOF'
-        #!/bin/sh
-        exec gradle "$@"
-        EOF
+
+        curl -s https://raw.githubusercontent.com/gradle/gradle/v8.6.0/gradlew > gradlew
         chmod +x gradlew
-        
-        gradle assembleDebug --no-daemon --stacktrace
+
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug --no-daemon
 
     - uses: actions/upload-artifact@v4
       with:
