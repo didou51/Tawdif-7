@@ -16,26 +16,33 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - uses: android-actions/setup-android@v3
-
     - name: Build APK
       run: |
+        sudo apt-get install -y aapt android-sdk zipalign apksigner 2>/dev/null || true
+        pip install buildozer 2>/dev/null || true
+        
+        # Use gradle with wrapper
+        wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip
+        unzip -q gradle-8.4-bin.zip
+        export PATH=$PATH:$PWD/gradle-8.4/bin
+        
         mkdir -p app/src/main/java/dz/tawdhif/app
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/assets
-        find . -name "*.zip" -exec unzip -o {} \; 2>/dev/null || true
-        find . -name "*.html" | head -1 | xargs -I{} cp {} app/src/main/assets/index.html 2>/dev/null || true
-        [ ! -f app/src/main/assets/index.html ] && echo "<h1>تَوظِيف</h1>" > app/src/main/assets/index.html
-        cat > app/src/main/AndroidManifest.xml << 'MANIFEST'
+        
+        find . -name "*.html" | head -1 | xargs -I{} cp {} app/src/main/assets/index.html 2>/dev/null || echo "<h1>تَوظِيف</h1>" > app/src/main/assets/index.html
+        
+        cat > app/src/main/AndroidManifest.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="dz.tawdhif.app">
         <uses-permission android:name="android.permission.INTERNET"/>
-        <application android:label="تَوظِيف" android:hardwareAccelerated="true" android:usesCleartextTraffic="true">
+        <application android:label="تَوظِيف" android:hardwareAccelerated="true" android:usesCleartextTraffic="true" android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true" android:screenOrientation="portrait">
         <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
         </activity></application></manifest>
-        MANIFEST
-        cat > app/src/main/java/dz/tawdhif/app/MainActivity.java << 'JAVA'
+        EOF
+        
+        cat > app/src/main/java/dz/tawdhif/app/MainActivity.java << 'EOF'
         package dz.tawdhif.app;
         import android.app.Activity;
         import android.os.Bundle;
@@ -55,32 +62,62 @@ jobs:
             }
             public void onBackPressed() { if(w.canGoBack()) w.goBack(); else super.onBackPressed(); }
         }
-        JAVA
-        cat > app/src/main/res/values/strings.xml << 'XML'
+        EOF
+        
+        cat > app/src/main/res/values/strings.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?><resources><string name="app_name">تَوظِيف</string></resources>
-        XML
-        cat > app/build.gradle << 'GRADLE'
+        EOF
+        
+        cat > app/build.gradle << 'EOF'
         plugins { id 'com.android.application' }
         android {
             namespace 'dz.tawdhif.app'
             compileSdk 34
-            defaultConfig { applicationId "dz.tawdhif.app"; minSdk 21; targetSdk 34; versionCode 1; versionName "1.0" }
-            compileOptions { sourceCompatibility JavaVersion.VERSION_11; targetCompatibility JavaVersion.VERSION_11 }
+            defaultConfig {
+                applicationId "dz.tawdhif.app"
+                minSdk 21
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_11
+                targetCompatibility JavaVersion.VERSION_11
+            }
         }
         dependencies { implementation 'androidx.appcompat:appcompat:1.6.1' }
-        GRADLE
-        cat > build.gradle << 'GRADLE'
+        EOF
+        
+        cat > build.gradle << 'EOF'
         plugins { id 'com.android.application' version '8.2.0' apply false }
-        GRADLE
-        cat > settings.gradle << 'GRADLE'
+        EOF
+        
+        cat > settings.gradle << 'EOF'
         pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-        dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories { google(); mavenCentral() }
+        }
         rootProject.name = "tawdhif"
         include ':app'
-        GRADLE
+        EOF
+        
         mkdir -p gradle/wrapper
-        echo "distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip" > gradle/wrapper/gradle-wrapper.properties
-        gradle assembleDebug --no-daemon
+        cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+        distributionBase=GRADLE_USER_HOME
+        distributionPath=wrapper/dists
+        distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-bin.zip
+        zipStoreBase=GRADLE_USER_HOME
+        zipStorePath=wrapper/dists
+        EOF
+        
+        cat > gradlew << 'EOF'
+        #!/bin/sh
+        exec gradle "$@"
+        EOF
+        chmod +x gradlew
+        
+        gradle assembleDebug --no-daemon --stacktrace
 
     - uses: actions/upload-artifact@v4
       with:
