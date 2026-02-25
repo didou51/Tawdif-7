@@ -119,7 +119,19 @@ jobs:
         EOF
 
     - name: Build APK
-      run: gradle assembleDebug --no-daemon --stacktrace 2>&1 | tail -80
+      run: |
+        gradle assembleDebug --no-daemon
+        echo "=== Finding APK ==="
+        find / -name "*.apk" 2>/dev/null || echo "No APK anywhere"
+        find / -name "app-debug.apk" 2>/dev/null || echo "No debug APK"
+        ls -la ~/.gradle/ 2>/dev/null || true
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: tawdhif-apk
+        path: "**/*.apk"
+        retention-days: 30
 
     - name: Check APK
       run: |
