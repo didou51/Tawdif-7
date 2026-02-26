@@ -1,0 +1,2121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تَوظِيف — Android App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════ GLOBAL ═══════════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:'IBM Plex Sans Arabic',sans-serif;background:#0a0a0f;color:#fff;overflow:hidden;}
+
+/* ═══════════════════════════ DESKTOP WRAPPER ═══════════════════════════ */
+.desktop{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;gap:48px;padding:20px;
+  background:radial-gradient(ellipse at 20% 50%,rgba(0,196,163,0.08),transparent 60%),
+             radial-gradient(ellipse at 80% 50%,rgba(79,142,247,0.06),transparent 60%),
+             #0a0a0f;
+}
+
+/* sidebar info */
+.app-info{
+  max-width:280px;
+  flex-shrink:0;
+}
+.app-info h1{font-size:32px;font-weight:700;letter-spacing:-1px;margin-bottom:8px;
+  background:linear-gradient(135deg,#00c4a3,#4f8ef7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.app-info p{font-size:14px;color:#5a7090;line-height:1.7;margin-bottom:28px;}
+
+.nav-pills{display:flex;flex-direction:column;gap:6px;}
+.nav-pill{
+  padding:10px 16px;border-radius:10px;background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.06);font-size:13px;color:#5a7090;
+  cursor:pointer;transition:all .2s;text-align:right;
+  display:flex;align-items:center;gap:10px;
+}
+.nav-pill:hover{background:rgba(0,196,163,0.08);border-color:rgba(0,196,163,0.2);color:#00c4a3;}
+.nav-pill.active{background:rgba(0,196,163,0.12);border-color:rgba(0,196,163,0.35);color:#00c4a3;font-weight:600;}
+.nav-pill .np-icon{font-size:16px;}
+
+/* ═══════════════════════════ PHONE FRAME ═══════════════════════════ */
+.phone-wrap{position:relative;flex-shrink:0;}
+
+.phone{
+  width:375px;height:812px;
+  background:#111318;
+  border-radius:52px;
+  border:2px solid #2a2f3d;
+  box-shadow:
+    0 0 0 1px #0d1018,
+    0 50px 120px rgba(0,0,0,0.8),
+    inset 0 0 0 1px rgba(255,255,255,0.04);
+  overflow:hidden;
+  position:relative;
+  display:flex;flex-direction:column;
+}
+
+/* Notch */
+.notch{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:120px;height:30px;
+  background:#111318;
+  border-radius:0 0 20px 20px;
+  z-index:1000;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.notch-camera{width:10px;height:10px;border-radius:50%;background:#1e2330;}
+.notch-speaker{width:50px;height:4px;border-radius:2px;background:#1e2330;}
+
+/* Status bar */
+.status-bar{
+  height:44px;padding:0 24px;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding-bottom:6px;font-size:12px;font-weight:600;
+  font-family:'JetBrains Mono',monospace;
+  flex-shrink:0;position:relative;z-index:50;
+}
+
+/* Screen area */
+.screens-viewport{
+  flex:1;overflow:hidden;position:relative;
+}
+
+.screen{
+  position:absolute;inset:0;
+  overflow-y:auto;overflow-x:hidden;
+  display:none;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.screen::-webkit-scrollbar{display:none;}
+.screen.active{display:block;}
+
+/* Slide animations */
+.screen.slide-in{animation:slideIn .35s cubic-bezier(.4,0,.2,1) both;}
+.screen.slide-out{animation:slideOut .35s cubic-bezier(.4,0,.2,1) both;}
+.screen.slide-in-left{animation:slideInLeft .35s cubic-bezier(.4,0,.2,1) both;}
+
+@keyframes slideIn{from{transform:translateX(100%);opacity:.6}to{transform:translateX(0);opacity:1}}
+@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(-40%);opacity:0}}
+@keyframes slideInLeft{from{transform:translateX(-100%);opacity:.6}to{transform:translateX(0);opacity:1}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* Bottom nav */
+.bottom-nav{
+  height:72px;
+  display:flex;align-items:center;justify-content:space-around;
+  border-top:1px solid rgba(255,255,255,0.06);
+  background:rgba(17,19,24,0.95);
+  backdrop-filter:blur(20px);
+  flex-shrink:0;
+  padding-bottom:8px;
+  position:relative;z-index:100;
+}
+
+.bnav-item{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer;padding:6px 16px;border-radius:12px;
+  transition:all .2s;flex:1;
+}
+.bnav-item:active{background:rgba(255,255,255,0.05);}
+.bnav-icon{font-size:22px;transition:transform .2s;}
+.bnav-label{font-size:10px;color:#3d4f65;transition:color .2s;}
+.bnav-item.active .bnav-label{color:#00c4a3;}
+.bnav-item.active .bnav-icon{transform:scale(1.1);}
+
+.bnav-dot{
+  position:absolute;top:-2px;right:-2px;
+  width:8px;height:8px;border-radius:50%;
+  background:#f5a623;border:2px solid #111318;
+}
+
+/* ═══════════════════════════ DESIGN TOKENS ═══════════════════════════ */
+:root{
+  --c0:#00c4a3;
+  --c1:#009e85;
+  --c2:#4f8ef7;
+  --c3:#f5a623;
+  --c4:#ff4757;
+  --bg:#111318;
+  --bg2:#161b24;
+  --bg3:#1c2230;
+  --card:#1a1f2e;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --text:#dde5f0;
+  --muted:#4e6380;
+  --muted2:#8097b5;
+}
+
+/* ═══════════════════════════ SPLASH ═══════════════════════════ */
+.splash{
+  background:linear-gradient(160deg,#061612,#080b12,#0a0612);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;position:relative;overflow:hidden;
+}
+.splash-rings{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.splash-ring{
+  position:absolute;border-radius:50%;border:1px solid rgba(0,196,163,0.15);
+  animation:ringPulse 3s ease-in-out infinite;
+}
+@keyframes ringPulse{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.05);opacity:.15}}
+
+.splash-logo-wrap{
+  width:90px;height:90px;border-radius:26px;
+  background:linear-gradient(135deg,#00c4a3,#4f8ef7);
+  display:flex;align-items:center;justify-content:center;
+  font-size:40px;margin-bottom:24px;
+  box-shadow:0 20px 60px rgba(0,196,163,0.4);
+  animation:logoBounce .8s cubic-bezier(.22,1,.36,1) .3s both;
+}
+@keyframes logoBounce{from{opacity:0;transform:scale(.5) translateY(20px)}to{opacity:1;transform:scale(1)}}
+
+.splash-title{font-size:36px;font-weight:700;letter-spacing:-1px;margin-bottom:6px;
+  background:linear-gradient(90deg,#00c4a3,#4f8ef7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  animation:fadeUp .6s ease .6s both;}
+.splash-sub{font-size:14px;color:var(--muted2);animation:fadeUp .6s ease .8s both;}
+.splash-loader{
+  margin-top:60px;width:48px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;
+  animation:fadeUp .6s ease 1s both;
+}
+.splash-loader-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#00c4a3,#4f8ef7);
+  animation:load 2.5s ease forwards;}
+@keyframes load{from{width:0}to{width:100%}}
+
+/* ═══════════════════════════ ONBOARDING ═══════════════════════════ */
+.onboard{height:100%;display:flex;flex-direction:column;background:var(--bg);}
+
+.onboard-slides{flex:1;position:relative;overflow:hidden;}
+.onboard-slide{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:32px 24px;
+  opacity:0;transform:translateX(60px);transition:all .4s cubic-bezier(.4,0,.2,1);
+}
+.onboard-slide.active{opacity:1;transform:translateX(0);}
+.onboard-slide.prev{opacity:0;transform:translateX(-60px);}
+
+.ob-art{
+  width:200px;height:200px;margin-bottom:40px;border-radius:40px;
+  display:flex;align-items:center;justify-content:center;font-size:80px;
+  position:relative;
+}
+
+.ob-title{font-size:26px;font-weight:700;letter-spacing:-.5px;text-align:center;margin-bottom:12px;}
+.ob-desc{font-size:15px;color:var(--muted2);text-align:center;line-height:1.7;max-width:280px;}
+
+.onboard-dots{display:flex;gap:6px;justify-content:center;padding:16px;}
+.ob-dot{width:8px;height:8px;border-radius:4px;background:var(--bg3);transition:all .3s;}
+.ob-dot.active{width:24px;background:var(--c0);}
+
+.onboard-actions{padding:20px 24px 32px;display:flex;flex-direction:column;gap:10px;}
+
+/* ═══════════════════════════ ROLE PICKER ═══════════════════════════ */
+.role-pick{
+  background:var(--bg);min-height:100%;padding:0 0 32px;
+}
+.rp-hero{
+  padding:40px 24px 28px;
+  background:linear-gradient(180deg,#0a1a16,var(--bg));
+  text-align:center;
+}
+.rp-logo{
+  width:56px;height:56px;border-radius:16px;
+  background:linear-gradient(135deg,#00c4a3,#4f8ef7);
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  margin:0 auto 16px;box-shadow:0 12px 30px rgba(0,196,163,0.3);
+}
+.rp-title{font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px;}
+.rp-sub{font-size:14px;color:var(--muted2);}
+
+.rp-cards{padding:20px 16px;display:flex;flex-direction:column;gap:14px;}
+
+.rp-card{
+  background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:22px;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);
+  display:flex;gap:16px;align-items:flex-start;position:relative;overflow:hidden;
+}
+.rp-card::before{
+  content:'';position:absolute;inset:0;opacity:0;transition:opacity .25s;border-radius:20px;
+}
+.rp-card.seeker::before{background:radial-gradient(ellipse at 0% 0%,rgba(0,196,163,0.12),transparent 70%);}
+.rp-card.employer::before{background:radial-gradient(ellipse at 0% 0%,rgba(245,166,35,0.12),transparent 70%);}
+.rp-card:active{transform:scale(.97);}
+.rp-card:active::before{opacity:1;}
+
+.rp-card-icon{
+  width:52px;height:52px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;
+}
+.seeker .rp-card-icon{background:rgba(0,196,163,0.12);}
+.employer .rp-card-icon{background:rgba(245,166,35,0.12);}
+
+.rp-card-body{flex:1;}
+.rp-card-title{font-size:17px;font-weight:700;margin-bottom:4px;}
+.rp-card-desc{font-size:13px;color:var(--muted2);line-height:1.5;margin-bottom:12px;}
+.rp-card-tags{display:flex;flex-wrap:wrap;gap:6px;}
+.rp-tag{font-size:11px;padding:3px 9px;border-radius:6px;font-family:'JetBrains Mono',monospace;}
+.seeker .rp-tag{background:rgba(0,196,163,0.1);color:var(--c0);border:1px solid rgba(0,196,163,0.2);}
+.employer .rp-tag{background:rgba(245,166,35,0.1);color:var(--c3);border:1px solid rgba(245,166,35,0.2);}
+
+.rp-card-arrow{
+  width:32px;height:32px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;align-self:center;
+}
+.seeker .rp-card-arrow{background:rgba(0,196,163,0.15);color:var(--c0);}
+.employer .rp-card-arrow{background:rgba(245,166,35,0.15);color:var(--c3);}
+
+.rp-login-row{
+  text-align:center;padding:0 24px;font-size:14px;color:var(--muted2);
+}
+
+/* ═══════════════════════════ AUTH FORMS ═══════════════════════════ */
+.auth-screen{min-height:100%;background:var(--bg);display:flex;flex-direction:column;}
+
+.auth-header{
+  padding:56px 24px 24px;
+  position:relative;
+}
+.auth-back{
+  width:36px;height:36px;border-radius:10px;background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  cursor:pointer;margin-bottom:20px;border:none;color:var(--text);
+}
+
+.auth-progress{
+  display:flex;gap:4px;margin-bottom:24px;
+}
+.prog-seg{flex:1;height:3px;border-radius:2px;background:var(--bg3);overflow:hidden;transition:all .3s;}
+.prog-seg.done{background:var(--c0);}
+.prog-seg.active{background:var(--c0);animation:progressGrow .4s ease;}
+@keyframes progressGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+.auth-title{font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px;}
+.auth-sub{font-size:14px;color:var(--muted2);}
+
+.auth-body{flex:1;padding:0 24px 24px;}
+
+/* Form elements */
+.fgroup{margin-bottom:16px;}
+.flabel{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+.flabel-hint{font-size:11px;color:var(--muted);font-weight:400;}
+
+.finput-wrap{position:relative;}
+.finput{
+  width:100%;background:var(--bg3);border:1.5px solid var(--border2);
+  border-radius:12px;padding:14px 44px 14px 16px;
+  font-size:15px;color:var(--text);font-family:'IBM Plex Sans Arabic',sans-serif;
+  outline:none;transition:all .2s;direction:rtl;
+}
+.finput::placeholder{color:var(--muted);}
+.finput:focus{border-color:var(--c0);background:#0d1a16;box-shadow:0 0 0 3px rgba(0,196,163,0.1);}
+.finput.em:focus{border-color:var(--c3);background:#1a120a;box-shadow:0 0 0 3px rgba(245,166,35,0.1);}
+.finput.err{border-color:var(--c4);}
+.finput.ok{border-color:var(--c0);}
+.finput-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:17px;pointer-events:none;}
+.finput-suffix{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:6px;}
+
+.feye{background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;padding:4px;}
+
+.fselect{
+  width:100%;background:var(--bg3);border:1.5px solid var(--border2);border-radius:12px;
+  padding:14px 44px 14px 16px;font-size:15px;color:var(--text);
+  font-family:'IBM Plex Sans Arabic',sans-serif;outline:none;
+  appearance:none;cursor:pointer;direction:rtl;transition:all .2s;
+}
+.fselect:focus{border-color:var(--c0);}
+.fselect option{background:var(--card);}
+
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.frow3{display:grid;grid-template-columns:72px 1fr;gap:8px;}
+
+/* Phone prefix */
+.phone-prefix{
+  background:var(--bg3);border:1.5px solid var(--border2);border-radius:12px;
+  padding:14px 10px;font-size:13px;color:var(--muted2);
+  font-family:'JetBrains Mono',monospace;text-align:center;
+}
+
+/* Password strength */
+.pwd-strength{display:flex;gap:3px;margin-top:6px;}
+.ps-bar{flex:1;height:3px;border-radius:2px;background:var(--bg3);transition:background .3s;}
+
+/* Error text */
+.ferr{font-size:12px;color:var(--c4);margin-top:5px;display:none;}
+.ferr.show{display:block;}
+
+/* Checkbox */
+.fcheck-label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:var(--muted2);}
+.fcheck-input{display:none;}
+.fcheck-box{
+  width:20px;height:20px;border-radius:6px;border:2px solid var(--border2);
+  background:var(--bg3);flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;
+  transition:all .2s;
+}
+.fcheck-input:checked+.fcheck-box{background:var(--c0);border-color:var(--c0);color:#080b12;}
+.fcheck-input:checked+.fcheck-box::after{content:'✓';}
+
+/* Chips */
+.chip-group{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{
+  padding:8px 14px;border-radius:20px;border:1.5px solid var(--border2);
+  background:var(--bg3);color:var(--muted2);font-size:13px;
+  cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;
+}
+.chip:active{transform:scale(.94);}
+.chip.sel-sk{background:rgba(0,196,163,0.12);border-color:var(--c0);color:var(--c0);}
+.chip.sel-em{background:rgba(245,166,35,0.12);border-color:var(--c3);color:var(--c3);}
+
+/* Skills tags */
+.skill-wrap{
+  display:flex;flex-wrap:wrap;gap:6px;padding:12px;
+  background:var(--bg3);border:1.5px solid var(--border2);border-radius:12px;min-height:50px;
+}
+.stag{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;background:rgba(0,196,163,0.1);border:1px solid rgba(0,196,163,0.25);
+  border-radius:6px;font-size:12px;color:var(--c0);font-family:'JetBrains Mono',monospace;
+  animation:tagIn .2s ease;
+}
+@keyframes tagIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.stag-remove{background:none;border:none;color:var(--c0);cursor:pointer;font-size:14px;line-height:1;padding:0;}
+.skill-input{background:none;border:none;outline:none;color:var(--text);font-size:13px;font-family:'IBM Plex Sans Arabic',sans-serif;flex:1;min-width:80px;}
+.skill-input::placeholder{color:var(--muted);}
+
+/* Upload */
+.upload-zone{
+  border:2px dashed var(--border2);border-radius:14px;
+  padding:24px;text-align:center;cursor:pointer;transition:all .2s;
+}
+.upload-zone:active{border-color:var(--c0);background:rgba(0,196,163,0.04);}
+.upload-zone input{display:none;}
+
+/* Buttons */
+.btn{
+  width:100%;padding:16px;border-radius:14px;
+  font-size:16px;font-weight:700;cursor:pointer;border:none;
+  font-family:'IBM Plex Sans Arabic',sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .2s;position:relative;overflow:hidden;
+}
+.btn:active{transform:scale(.97);}
+.btn-sk{background:linear-gradient(135deg,#00c4a3,#009e85);color:#080b12;}
+.btn-em{background:linear-gradient(135deg,#f5a623,#d4880f);color:#080b12;}
+.btn-blue{background:linear-gradient(135deg,#4f8ef7,#6366f1);color:#fff;}
+.btn-outline{background:transparent;border:1.5px solid var(--border2);color:var(--text);}
+.btn-sm{padding:12px;font-size:14px;border-radius:10px;}
+.btn-ghost{background:rgba(255,255,255,0.05);color:var(--muted2);}
+
+/* Or divider */
+.or-div{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--muted);font-size:12px;}
+.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* Social btn */
+.social-row{display:flex;gap:10px;margin-bottom:20px;}
+.social-btn{
+  flex:1;padding:13px;border-radius:12px;background:var(--bg3);
+  border:1.5px solid var(--border2);color:var(--text);font-size:13px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  font-family:'IBM Plex Sans Arabic',sans-serif;transition:all .2s;
+}
+.social-btn:active{background:var(--card);}
+
+/* OTP boxes */
+.otp-row{display:flex;gap:8px;justify-content:center;margin:20px 0;}
+.otp-box{
+  width:44px;height:52px;background:var(--bg3);border:2px solid var(--border2);
+  border-radius:10px;text-align:center;font-size:22px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;color:var(--text);outline:none;transition:all .2s;
+}
+.otp-box:focus{border-color:var(--c0);box-shadow:0 0 0 3px rgba(0,196,163,0.1);}
+.otp-box.filled{border-color:var(--c0);background:rgba(0,196,163,0.06);}
+
+/* ═══════════════════════════ HOME / SEEKER ═══════════════════════════ */
+.home-screen{min-height:100%;background:var(--bg);}
+
+.home-topbar{
+  padding:52px 20px 16px;
+  background:linear-gradient(180deg,#0a1a16,transparent);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.home-greeting{flex:1;}
+.home-greeting-sub{font-size:13px;color:var(--muted2);}
+.home-greeting-name{font-size:20px;font-weight:700;margin-top:2px;}
+.home-avatar{
+  width:42px;height:42px;border-radius:13px;
+  background:linear-gradient(135deg,#00c4a3,#4f8ef7);
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  cursor:pointer;position:relative;
+}
+.avatar-badge{
+  position:absolute;top:-3px;left:-3px;width:14px;height:14px;
+  background:var(--c4);border-radius:50%;border:2px solid var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;
+}
+
+/* Search bar */
+.search-bar{
+  margin:0 16px 20px;padding:14px 16px;
+  background:var(--bg3);border:1.5px solid var(--border2);border-radius:14px;
+  display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s;
+}
+.search-bar:active{border-color:var(--c0);}
+.search-bar-icon{font-size:18px;color:var(--muted);}
+.search-bar-text{font-size:15px;color:var(--muted);flex:1;}
+.search-bar-filter{
+  width:32px;height:32px;border-radius:9px;background:rgba(0,196,163,0.12);
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+}
+
+/* Section */
+.section{padding:0 16px 20px;}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.section-title{font-size:17px;font-weight:700;}
+.section-see{font-size:13px;color:var(--c0);cursor:pointer;}
+
+/* Horizontal scroll */
+.hscroll{display:flex;gap:12px;overflow-x:auto;padding:0 16px 4px;margin:0 -16px;scrollbar-width:none;}
+.hscroll::-webkit-scrollbar{display:none;}
+
+/* Category chips */
+.cat-chip{
+  padding:10px 18px;border-radius:20px;white-space:nowrap;font-size:13px;font-weight:600;
+  background:var(--bg3);border:1.5px solid var(--border2);color:var(--muted2);
+  cursor:pointer;transition:all .2s;flex-shrink:0;
+}
+.cat-chip.active{background:rgba(0,196,163,0.12);border-color:var(--c0);color:var(--c0);}
+.cat-chip:active{transform:scale(.95);}
+
+/* Job card */
+.job-card{
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:18px;cursor:pointer;transition:all .25s;flex-shrink:0;width:260px;
+}
+.job-card:active{transform:scale(.97);}
+
+.jc-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.jc-logo{
+  width:44px;height:44px;border-radius:12px;background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  border:1px solid var(--border);
+}
+.jc-company{font-size:13px;color:var(--muted2);}
+.jc-title{font-size:15px;font-weight:700;margin-top:2px;}
+.jc-match{
+  margin-right:auto;display:flex;flex-direction:column;align-items:center;
+  font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--c0);
+  background:rgba(0,196,163,0.08);border-radius:10px;padding:6px 10px;min-width:52px;text-align:center;
+}
+.jc-match-label{font-size:9px;color:var(--muted2);font-weight:400;font-family:'IBM Plex Sans Arabic',monospace;}
+.jc-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.jc-tag{font-size:11px;padding:4px 9px;border-radius:6px;background:var(--bg3);color:var(--muted2);font-family:'JetBrains Mono',monospace;}
+.jc-footer{display:flex;align-items:center;justify-content:space-between;}
+.jc-sal{font-size:13px;color:var(--c0);font-weight:600;}
+.jc-time{font-size:11px;color:var(--muted);}
+.jc-save{
+  width:30px;height:30px;border-radius:8px;background:var(--bg3);
+  display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;
+  transition:all .2s;border:none;color:var(--muted);
+}
+.jc-save.saved{background:rgba(245,166,35,0.12);color:var(--c3);}
+
+/* Featured job (full width) */
+.job-card-full{
+  background:var(--card);border:1px solid var(--border);border-radius:18px;
+  padding:18px;cursor:pointer;transition:all .25s;margin-bottom:10px;
+  display:flex;align-items:center;gap:14px;
+}
+.job-card-full:active{transform:scale(.98);}
+.jcf-left{flex:1;}
+.jcf-company{font-size:12px;color:var(--muted2);}
+.jcf-title{font-size:15px;font-weight:700;margin:3px 0 8px;}
+.jcf-tags{display:flex;gap:6px;}
+.jcf-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+
+/* AI Banner */
+.ai-banner{
+  margin:0 16px 20px;padding:18px;border-radius:18px;
+  background:linear-gradient(135deg,#0a1a16,#0d1525);
+  border:1px solid rgba(0,196,163,0.2);
+  display:flex;align-items:center;gap:14px;cursor:pointer;
+}
+.ai-banner-icon{font-size:32px;}
+.ai-banner-text{flex:1;}
+.ai-banner-title{font-size:15px;font-weight:700;color:var(--c0);}
+.ai-banner-desc{font-size:13px;color:var(--muted2);margin-top:2px;}
+
+/* Match meter widget */
+.match-widget{
+  margin:0 16px 20px;padding:18px;border-radius:18px;
+  background:var(--card);border:1px solid var(--border);
+}
+.match-widget-title{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.match-bars{display:flex;flex-direction:column;gap:10px;}
+.mb-row{display:flex;align-items:center;gap:10px;}
+.mb-label{font-size:12px;color:var(--muted2);width:80px;flex-shrink:0;}
+.mb-bar{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.mb-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--c0),var(--c2));transition:width 1s ease;}
+.mb-val{font-size:11px;color:var(--muted2);width:32px;text-align:left;font-family:'JetBrains Mono',monospace;}
+
+/* ═══════════════════════════ JOB DETAIL ═══════════════════════════ */
+.detail-screen{min-height:100%;background:var(--bg);}
+.detail-hero{
+  padding:52px 20px 24px;
+  background:linear-gradient(180deg,#0a1a16,var(--bg));
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.detail-back{align-self:flex-start;cursor:pointer;font-size:22px;margin-bottom:20px;background:var(--bg3);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:none;color:var(--text);}
+.detail-logo{width:72px;height:72px;border-radius:20px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:14px;border:1px solid var(--border);}
+.detail-company{font-size:14px;color:var(--muted2);margin-bottom:4px;}
+.detail-title{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:16px;}
+.detail-tags{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;}
+.detail-tag{font-size:12px;padding:5px 12px;border-radius:8px;background:var(--bg3);color:var(--muted2);border:1px solid var(--border);}
+
+.detail-match-card{
+  margin:16px;padding:16px;border-radius:16px;
+  background:linear-gradient(135deg,rgba(0,196,163,.1),rgba(79,142,247,.08));
+  border:1px solid rgba(0,196,163,.25);
+  display:flex;align-items:center;gap:16px;
+}
+.dm-pct{font-size:36px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--c0);}
+.dm-desc{font-size:13px;color:var(--muted2);}
+.dm-desc strong{color:var(--text);display:block;font-size:15px;margin-bottom:2px;}
+
+.detail-section{padding:0 16px 16px;}
+.ds-title{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.ds-content{font-size:14px;color:var(--muted2);line-height:1.8;}
+.ds-list{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.ds-list li{font-size:14px;color:var(--muted2);display:flex;align-items:flex-start;gap:8px;}
+.ds-list li::before{content:'›';color:var(--c0);font-size:16px;flex-shrink:0;}
+
+.detail-footer{
+  position:sticky;bottom:0;left:0;right:0;padding:14px 16px;
+  background:rgba(17,19,24,.95);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;gap:10px;
+}
+
+/* ═══════════════════════════ PROFILE ═══════════════════════════ */
+.profile-screen{min-height:100%;background:var(--bg);}
+.profile-hero{
+  padding:52px 20px 24px;
+  background:linear-gradient(180deg,#0a1a16,var(--bg));
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+}
+.profile-avatar{
+  width:88px;height:88px;border-radius:26px;
+  background:linear-gradient(135deg,#00c4a3,#4f8ef7);
+  display:flex;align-items:center;justify-content:center;font-size:40px;
+  margin-bottom:14px;box-shadow:0 16px 40px rgba(0,196,163,0.3);
+  position:relative;cursor:pointer;
+}
+.profile-edit-badge{
+  position:absolute;bottom:-4px;left:-4px;width:24px;height:24px;
+  background:var(--c0);border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;border:2px solid var(--bg);
+}
+.profile-name{font-size:22px;font-weight:700;}
+.profile-role{font-size:14px;color:var(--c0);margin:4px 0 12px;}
+.profile-loc{font-size:13px;color:var(--muted2);}
+
+.profile-stats{
+  display:flex;gap:0;margin:16px;
+  background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;
+}
+.pstat{flex:1;padding:14px 0;text-align:center;border-left:1px solid var(--border);}
+.pstat:last-child{border-left:none;}
+.pstat-val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--c0);}
+.pstat-label{font-size:11px;color:var(--muted2);margin-top:2px;}
+
+.completion-card{
+  margin:0 16px 16px;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:16px;
+}
+.comp-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;}
+.comp-val{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--c0);}
+.comp-bar{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.comp-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#00c4a3,#4f8ef7);}
+.comp-tip{font-size:12px;color:var(--muted2);margin-top:8px;}
+.comp-tip span{color:var(--c0);}
+
+.profile-section{margin:0 16px 16px;}
+.ps-header{
+  font-size:15px;font-weight:700;padding:14px 0 10px;
+  border-bottom:1px solid var(--border);margin-bottom:12px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.ps-edit{font-size:12px;color:var(--c0);cursor:pointer;}
+
+.exp-item{
+  display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.04);
+}
+.exp-item:last-child{border-bottom:none;}
+.exp-dot{width:10px;height:10px;border-radius:50%;background:var(--c0);flex-shrink:0;margin-top:5px;}
+.exp-title{font-size:14px;font-weight:600;}
+.exp-company{font-size:13px;color:var(--muted2);}
+.exp-period{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+/* ═══════════════════════════ APPLICATIONS ═══════════════════════════ */
+.apps-screen{min-height:100%;background:var(--bg);}
+.screen-topbar{padding:52px 20px 16px;font-size:22px;font-weight:700;}
+
+.apps-tabs{
+  display:flex;gap:0;padding:0 16px 16px;overflow-x:auto;scrollbar-width:none;
+}
+.apps-tabs::-webkit-scrollbar{display:none;}
+.app-tab{
+  padding:8px 18px;border-radius:20px;white-space:nowrap;font-size:13px;font-weight:600;
+  cursor:pointer;transition:all .2s;flex-shrink:0;color:var(--muted2);
+}
+.app-tab.active{background:rgba(0,196,163,0.12);color:var(--c0);}
+
+.app-item{
+  margin:0 16px 10px;padding:16px;background:var(--card);border:1px solid var(--border);
+  border-radius:16px;cursor:pointer;transition:all .2s;
+}
+.app-item:active{transform:scale(.98);}
+
+.ai-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.ai-logo{width:40px;height:40px;border-radius:11px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border);}
+.ai-info{flex:1;}
+.ai-title{font-size:14px;font-weight:600;}
+.ai-company{font-size:12px;color:var(--muted2);}
+.ai-status{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.st-review{background:rgba(245,166,35,0.12);color:var(--c3);}
+.st-interview{background:rgba(79,142,247,0.12);color:var(--c2);}
+.st-accepted{background:rgba(0,196,163,0.12);color:var(--c0);}
+.st-rejected{background:rgba(255,71,87,0.12);color:var(--c4);}
+
+.ai-steps{display:flex;align-items:center;gap:0;}
+.ai-step{
+  display:flex;align-items:center;gap:4px;flex:1;
+}
+.ai-step-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;}
+.ai-step-dot.done{background:var(--c0);border-color:var(--c0);}
+.ai-step-dot.active{border-color:var(--c3);background:transparent;animation:pulse 1.5s infinite;}
+.ai-step-line{flex:1;height:2px;background:var(--border);}
+.ai-step-line.done{background:var(--c0);}
+.ai-step-name{font-size:10px;color:var(--muted);display:none;}
+
+/* ═══════════════════════════ NOTIFICATIONS ═══════════════════════════ */
+.notifs-screen{min-height:100%;background:var(--bg);}
+.notif-item{
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:background .2s;
+}
+.notif-item:active{background:var(--card);}
+.notif-item.unread{background:rgba(0,196,163,0.03);}
+.notif-avatar{
+  width:40px;height:40px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+}
+.notif-body{flex:1;}
+.notif-title{font-size:13px;font-weight:600;margin-bottom:3px;}
+.notif-desc{font-size:12px;color:var(--muted2);line-height:1.5;}
+.notif-time{font-size:11px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+.notif-unread-dot{width:8px;height:8px;border-radius:50%;background:var(--c0);flex-shrink:0;margin-top:4px;}
+
+/* ═══════════════════════════ EMPLOYER HOME ═══════════════════════════ */
+.emp-home{min-height:100%;background:#100c06;}
+.emp-topbar{
+  padding:52px 20px 20px;
+  background:linear-gradient(180deg,#1a1000,transparent);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.emp-avatar{
+  width:42px;height:42px;border-radius:13px;
+  background:linear-gradient(135deg,#f5a623,#d4880f);
+  display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;
+}
+
+.emp-kpi-scroll{
+  display:flex;gap:12px;padding:0 16px 20px;overflow-x:auto;scrollbar-width:none;
+}
+.emp-kpi-scroll::-webkit-scrollbar{display:none;}
+.emp-kpi-card{
+  background:#1a1208;border:1px solid rgba(245,166,35,0.15);border-radius:16px;
+  padding:16px;flex-shrink:0;width:130px;transition:all .2s;cursor:pointer;
+}
+.emp-kpi-card:active{transform:scale(.96);}
+.ekc-icon{font-size:20px;margin-bottom:8px;}
+.ekc-val{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#f5a623;}
+.ekc-label{font-size:11px;color:#8a7060;margin-top:3px;}
+
+.emp-job-card{
+  margin:0 16px 10px;padding:16px;
+  background:#1a1208;border:1px solid rgba(245,166,35,0.12);border-radius:16px;
+  cursor:pointer;transition:all .2s;
+}
+.emp-job-card:active{transform:scale(.98);}
+.ejc-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.ejc-icon{width:40px;height:40px;border-radius:11px;background:rgba(245,166,35,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;}
+.ejc-title{font-size:15px;font-weight:700;}
+.ejc-meta{font-size:12px;color:#8a7060;margin-top:2px;}
+.ejc-stats{display:flex;gap:14px;}
+.ejcs-item{text-align:center;}
+.ejcs-val{font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#f5a623;}
+.ejcs-label{font-size:10px;color:#8a7060;}
+
+.cand-card{
+  margin:0 16px 10px;padding:14px;
+  background:#1a1208;border:1px solid rgba(245,166,35,0.12);border-radius:14px;
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+}
+.cand-card:active{transform:scale(.98);}
+.cc-avatar{width:42px;height:42px;border-radius:12px;background:rgba(245,166,35,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;}
+.cc-info{flex:1;}
+.cc-name{font-size:14px;font-weight:600;color:#f5ebe0;}
+.cc-role{font-size:12px;color:#8a7060;}
+.cc-score{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#f5a623;}
+.cc-score-label{font-size:9px;color:#8a7060;text-align:center;}
+.cc-actions{display:flex;gap:6px;}
+.cc-btn{width:32px;height:32px;border-radius:8px;border:1px solid rgba(245,166,35,0.2);background:transparent;color:#8a7060;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s;}
+.cc-btn:hover,.cc-btn:active{background:rgba(245,166,35,0.1);color:#f5a623;}
+
+/* ═══════════════════════════ TOAST ═══════════════════════════ */
+.toast{
+  position:absolute;bottom:90px;left:16px;right:16px;
+  background:rgba(26,31,46,0.95);backdrop-filter:blur(20px);
+  border:1px solid var(--border2);border-radius:14px;padding:14px 16px;
+  display:flex;align-items:center;gap:10px;font-size:14px;
+  z-index:10000;transition:all .3s cubic-bezier(.22,1,.36,1);
+  transform:translateY(100px);opacity:0;pointer-events:none;
+  box-shadow:0 8px 30px rgba(0,0,0,0.6);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* ═══════════════════════════ SUCCESS SCREEN ═══════════════════════════ */
+.success-screen{
+  min-height:100%;background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:40px 24px;
+}
+.success-icon-big{font-size:80px;margin-bottom:24px;animation:logoBounce .6s cubic-bezier(.22,1,.36,1);}
+.success-title{font-size:28px;font-weight:700;letter-spacing:-.5px;margin-bottom:10px;}
+.success-desc{font-size:15px;color:var(--muted2);line-height:1.7;margin-bottom:36px;max-width:280px;}
+.success-steps{width:100%;display:flex;flex-direction:column;gap:10px;margin-bottom:32px;}
+.ss-item{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  text-align:right;animation:fadeUp .4s ease both;
+}
+.ss-item:nth-child(2){animation-delay:.1s;}
+.ss-item:nth-child(3){animation-delay:.2s;}
+.ss-num{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.ss-text{font-size:13px;color:var(--muted2);flex:1;}
+.ss-text strong{color:var(--text);}
+</style>
+</head>
+<body>
+
+<div class="desktop">
+
+  <!-- ═══ APP INFO SIDEBAR ═══ -->
+  <div class="app-info">
+    <h1>تَوظِيف</h1>
+    <p>تطبيق أندرويد متكامل لمنصة التوظيف الجزائرية. جميع الشاشات تفاعلية ومترابطة.</p>
+
+    <div class="nav-pills">
+      <div class="nav-pill active" onclick="goScreen('splash')" id="pill-splash">
+        <span class="np-icon">✨</span> Splash Screen
+      </div>
+      <div class="nav-pill" onclick="goScreen('onboarding')" id="pill-onboarding">
+        <span class="np-icon">📖</span> Onboarding
+      </div>
+      <div class="nav-pill" onclick="goScreen('role-pick')" id="pill-role-pick">
+        <span class="np-icon">🎯</span> اختيار نوع الحساب
+      </div>
+      <div class="nav-pill" onclick="goScreen('seeker-reg')" id="pill-seeker-reg">
+        <span class="np-icon">👤</span> تسجيل — باحث عمل
+      </div>
+      <div class="nav-pill" onclick="goScreen('employer-reg')" id="pill-employer-reg">
+        <span class="np-icon">🏢</span> تسجيل — صاحب عمل
+      </div>
+      <div class="nav-pill" onclick="goScreen('login')" id="pill-login">
+        <span class="np-icon">🔐</span> تسجيل الدخول
+      </div>
+      <div class="nav-pill" onclick="goScreen('home')" id="pill-home">
+        <span class="np-icon">🏠</span> الرئيسية — باحث
+      </div>
+      <div class="nav-pill" onclick="goScreen('job-detail')" id="pill-job-detail">
+        <span class="np-icon">💼</span> تفاصيل وظيفة
+      </div>
+      <div class="nav-pill" onclick="goScreen('profile')" id="pill-profile">
+        <span class="np-icon">👤</span> ملفي الشخصي
+      </div>
+      <div class="nav-pill" onclick="goScreen('applications')" id="pill-applications">
+        <span class="np-icon">📋</span> طلباتي
+      </div>
+      <div class="nav-pill" onclick="goScreen('notifications')" id="pill-notifications">
+        <span class="np-icon">🔔</span> الإشعارات
+      </div>
+      <div class="nav-pill" onclick="goScreen('emp-home')" id="pill-emp-home">
+        <span class="np-icon">🏢</span> لوحة — صاحب عمل
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PHONE ═══ -->
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="notch">
+        <div class="notch-camera"></div>
+        <div class="notch-speaker"></div>
+      </div>
+
+      <!-- STATUS BAR -->
+      <div class="status-bar" id="status-bar" style="color:#9ab">
+        <span>9:41</span>
+        <span>📶 🔋</span>
+      </div>
+
+      <!-- SCREENS -->
+      <div class="screens-viewport" id="viewport">
+
+        <!-- ══════ SPLASH ══════ -->
+        <div class="screen active" id="s-splash">
+          <div class="splash" style="height:100%;">
+            <div class="splash-rings">
+              <div class="splash-ring" style="width:200px;height:200px;"></div>
+              <div class="splash-ring" style="width:320px;height:320px;animation-delay:1s;"></div>
+              <div class="splash-ring" style="width:460px;height:460px;animation-delay:2s;"></div>
+            </div>
+            <div class="splash-logo-wrap">🇩🇿</div>
+            <div class="splash-title">تَوظِيف</div>
+            <div class="splash-sub">منصة التوظيف الجزائرية</div>
+            <div class="splash-loader"><div class="splash-loader-fill"></div></div>
+          </div>
+        </div>
+
+        <!-- ══════ ONBOARDING ══════ -->
+        <div class="screen" id="s-onboarding">
+          <div class="onboard">
+            <div class="onboard-slides">
+              <div class="onboard-slide active" id="ob0">
+                <div class="ob-art" style="background:linear-gradient(135deg,rgba(0,196,163,.15),rgba(79,142,247,.15));border:1px solid rgba(0,196,163,.2);">🤖</div>
+                <div class="ob-title">ذكاء اصطناعي يعمل لك</div>
+                <div class="ob-desc">نظام AI يحلل مهاراتك ويقترح أفضل الوظائف المناسبة لك تلقائياً</div>
+              </div>
+              <div class="onboard-slide" id="ob1">
+                <div class="ob-art" style="background:linear-gradient(135deg,rgba(245,166,35,.15),rgba(255,124,42,.15));border:1px solid rgba(245,166,35,.2);">🎯</div>
+                <div class="ob-title">نسبة التوافق الذكية</div>
+                <div class="ob-desc">احصل على نسبة توافق دقيقة مع كل وظيفة لتعرف فرصك قبل التقديم</div>
+              </div>
+              <div class="onboard-slide" id="ob2">
+                <div class="ob-art" style="background:linear-gradient(135deg,rgba(255,71,87,.15),rgba(245,166,35,.15));border:1px solid rgba(255,71,87,.2);">📍</div>
+                <div class="ob-title">48 ولاية جزائرية</div>
+                <div class="ob-desc">ابحث عن وظائف في أي ولاية أو اختر العمل عن بُعد — كل الجزائر في يدك</div>
+              </div>
+            </div>
+            <div class="onboard-dots">
+              <div class="ob-dot active" id="dot0"></div>
+              <div class="ob-dot" id="dot1"></div>
+              <div class="ob-dot" id="dot2"></div>
+            </div>
+            <div class="onboard-actions">
+              <button class="btn btn-sk" id="ob-next-btn" onclick="obNext()">التالي</button>
+              <button class="btn btn-ghost" onclick="goScreen('role-pick')" style="font-size:14px;padding:12px;">تخطي</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ ROLE PICK ══════ -->
+        <div class="screen" id="s-role-pick">
+          <div class="role-pick">
+            <div class="rp-hero">
+              <div class="rp-logo">🇩🇿</div>
+              <div class="rp-title">أهلاً بك في تَوظِيف</div>
+              <div class="rp-sub">اختر نوع حسابك لتبدأ رحلتك</div>
+            </div>
+            <div class="rp-cards">
+              <div class="rp-card seeker" onclick="goScreen('seeker-reg')">
+                <div class="rp-card-icon">👤</div>
+                <div class="rp-card-body">
+                  <div class="rp-card-title">باحث عن عمل</div>
+                  <div class="rp-card-desc">أريد وظيفة تناسب مهاراتي</div>
+                  <div class="rp-card-tags">
+                    <span class="rp-tag">AI مطابقة</span>
+                    <span class="rp-tag">اقتراحات ذكية</span>
+                    <span class="rp-tag">مجاني</span>
+                  </div>
+                </div>
+                <div class="rp-card-arrow">←</div>
+              </div>
+              <div class="rp-card employer" onclick="goScreen('employer-reg')">
+                <div class="rp-card-icon" style="background:rgba(245,166,35,0.12);">🏢</div>
+                <div class="rp-card-body">
+                  <div class="rp-card-title">صاحب عمل</div>
+                  <div class="rp-card-desc">أريد توظيف أفضل الكفاءات</div>
+                  <div class="rp-card-tags">
+                    <span class="rp-tag" style="background:rgba(245,166,35,0.1);color:var(--c3);border-color:rgba(245,166,35,0.2);">نشر وظائف</span>
+                    <span class="rp-tag" style="background:rgba(245,166,35,0.1);color:var(--c3);border-color:rgba(245,166,35,0.2);">فلترة ذكية</span>
+                  </div>
+                </div>
+                <div class="rp-card-arrow" style="background:rgba(245,166,35,0.15);color:var(--c3);">←</div>
+              </div>
+            </div>
+            <div class="rp-login-row">
+              لديك حساب؟ <span style="color:var(--c0);cursor:pointer;font-weight:600;" onclick="goScreen('login')">سجّل الدخول</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ SEEKER REGISTER ══════ -->
+        <div class="screen" id="s-seeker-reg">
+          <div class="auth-screen">
+            <div class="auth-header">
+              <button class="auth-back" onclick="goScreen('role-pick')">←</button>
+              <div class="auth-progress">
+                <div class="prog-seg active" id="sk-p1"></div>
+                <div class="prog-seg" id="sk-p2"></div>
+                <div class="prog-seg" id="sk-p3"></div>
+              </div>
+              <div class="auth-title" id="sk-reg-title">إنشاء حسابك 👤</div>
+              <div class="auth-sub" id="sk-reg-sub">الخطوة 1 من 3 — البيانات الأساسية</div>
+            </div>
+            <div class="auth-body">
+
+              <!-- Step 1 -->
+              <div id="sk-s1">
+                <div class="frow">
+                  <div class="fgroup">
+                    <div class="flabel">الاسم</div>
+                    <div class="finput-wrap">
+                      <span class="finput-icon">👤</span>
+                      <input class="finput" type="text" placeholder="الاسم" id="sk-fn">
+                    </div>
+                  </div>
+                  <div class="fgroup">
+                    <div class="flabel">اللقب</div>
+                    <div class="finput-wrap">
+                      <span class="finput-icon">✏️</span>
+                      <input class="finput" type="text" placeholder="اللقب" id="sk-ln">
+                    </div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">البريد الإلكتروني <span class="flabel-hint">رمز التحقق</span></div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">📧</span>
+                    <input class="finput" type="email" placeholder="exemple@gmail.com" id="sk-em" oninput="chkEmail('sk-em','sk-ec')">
+                    <div class="finput-suffix"><span id="sk-ec"></span></div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">رقم الهاتف</div>
+                  <div class="frow3">
+                    <div class="phone-prefix">+213</div>
+                    <div class="finput-wrap">
+                      <span class="finput-icon">📱</span>
+                      <input class="finput" type="tel" placeholder="0XXX XX XX XX">
+                    </div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">كلمة المرور <span class="flabel-hint">8 أحرف+</span></div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">🔒</span>
+                    <input class="finput" type="password" placeholder="••••••••" id="sk-pw" oninput="pwStrength('sk-pw','sk-ps')">
+                    <div class="finput-suffix">
+                      <button class="feye" onclick="togEye('sk-pw',this)">👁️</button>
+                    </div>
+                  </div>
+                  <div class="pwd-strength">
+                    <div class="ps-bar" id="sk-ps1"></div>
+                    <div class="ps-bar" id="sk-ps2"></div>
+                    <div class="ps-bar" id="sk-ps3"></div>
+                    <div class="ps-bar" id="sk-ps4"></div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">تأكيد كلمة المرور</div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">🔐</span>
+                    <input class="finput" type="password" placeholder="••••••••">
+                    <div class="finput-suffix"><button class="feye">👁️</button></div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <label class="fcheck-label">
+                    <input type="checkbox" class="fcheck-input">
+                    <div class="fcheck-box"></div>
+                    أوافق على <span style="color:var(--c0);margin:0 3px;">شروط الاستخدام</span>
+                  </label>
+                </div>
+                <div class="or-div">أو سجّل عبر</div>
+                <div class="social-row">
+                  <button class="social-btn" onclick="toast('🔜 قريباً')">
+                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    Google
+                  </button>
+                  <button class="social-btn" onclick="toast('🔜 قريباً')">
+                    <span style="color:#1877f2;font-weight:700;">f</span> Facebook
+                  </button>
+                </div>
+                <button class="btn btn-sk" onclick="skStep(2)">التالي — ملفك المهني ←</button>
+              </div>
+
+              <!-- Step 2 -->
+              <div id="sk-s2" style="display:none;">
+                <div class="fgroup">
+                  <div class="flabel">التخصص / المنصب</div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">💼</span>
+                    <input class="finput" type="text" placeholder="مطوّر، محاسب، مهندس...">
+                  </div>
+                </div>
+                <div class="frow">
+                  <div class="fgroup">
+                    <div class="flabel">الولاية</div>
+                    <div class="finput-wrap">
+                      <span class="finput-icon">📍</span>
+                      <select class="fselect">
+                        <option>16 - الجزائر</option><option>31 - وهران</option><option>25 - قسنطينة</option><option>23 - عنابة</option><option>19 - سطيف</option><option>06 - بجاية</option><option>15 - تيزي وزو</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="fgroup">
+                    <div class="flabel">الخبرة</div>
+                    <div class="finput-wrap">
+                      <span class="finput-icon">📅</span>
+                      <select class="fselect">
+                        <option>بدون خبرة</option><option>1-3 سنوات</option><option selected>3-5 سنوات</option><option>+5 سنوات</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">نوع العمل المفضّل</div>
+                  <div class="chip-group">
+                    <div class="chip sel-sk" onclick="this.classList.toggle('sel-sk')">🏠 عن بعد</div>
+                    <div class="chip" onclick="this.classList.toggle('sel-sk')">🏢 حضوري</div>
+                    <div class="chip sel-sk" onclick="this.classList.toggle('sel-sk')">🔀 هجين</div>
+                    <div class="chip" onclick="this.classList.toggle('sel-sk')">⏰ جزئي</div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">المهارات <span class="flabel-hint">Enter لإضافة</span></div>
+                  <div class="skill-wrap" onclick="document.getElementById('ski').focus()">
+                    <span class="stag">React <button class="stag-remove" onclick="this.closest('.stag').remove()">×</button></span>
+                    <span class="stag">Node.js <button class="stag-remove" onclick="this.closest('.stag').remove()">×</button></span>
+                    <input class="skill-input" id="ski" placeholder="أضف مهارة..." onkeydown="addTag(event)">
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;">
+                    <span onclick="addTagDirect(this)" style="font-size:11px;padding:3px 9px;border-radius:5px;background:var(--bg3);color:var(--muted2);cursor:pointer;font-family:'JetBrains Mono',monospace;">Python</span>
+                    <span onclick="addTagDirect(this)" style="font-size:11px;padding:3px 9px;border-radius:5px;background:var(--bg3);color:var(--muted2);cursor:pointer;font-family:'JetBrains Mono',monospace;">TypeScript</span>
+                    <span onclick="addTagDirect(this)" style="font-size:11px;padding:3px 9px;border-radius:5px;background:var(--bg3);color:var(--muted2);cursor:pointer;font-family:'JetBrains Mono',monospace;">Docker</span>
+                    <span onclick="addTagDirect(this)" style="font-size:11px;padding:3px 9px;border-radius:5px;background:var(--bg3);color:var(--muted2);cursor:pointer;font-family:'JetBrains Mono',monospace;">AWS</span>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">السيرة الذاتية <span class="flabel-hint">اختياري</span></div>
+                  <div class="upload-zone" onclick="toast('📄 سيحلل الـ AI ملفك تلقائياً!')">
+                    <input type="file">
+                    <div style="font-size:28px;margin-bottom:8px;">📄</div>
+                    <div style="font-size:14px;font-weight:600;margin-bottom:4px;">ارفع CV هنا</div>
+                    <div style="font-size:12px;color:var(--muted2);">PDF · DOC · حتى 5MB</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;">
+                  <button class="btn btn-ghost btn-sm" style="width:auto;padding:12px 16px;" onclick="skStep(1)">←</button>
+                  <button class="btn btn-sk" onclick="skStep(3)">التالي — التحقق ←</button>
+                </div>
+              </div>
+
+              <!-- Step 3 OTP -->
+              <div id="sk-s3" style="display:none;text-align:center;">
+                <div style="font-size:56px;margin:16px 0;">📧</div>
+                <div style="font-size:18px;font-weight:700;margin-bottom:6px;">تحقق من بريدك</div>
+                <div style="font-size:13px;color:var(--muted2);margin-bottom:4px;">أرسلنا رمز إلى</div>
+                <div style="font-size:14px;color:var(--c0);font-family:'JetBrains Mono',monospace;margin-bottom:24px;" id="sk-em-disp">ahmed@example.com</div>
+                <div class="otp-row">
+                  <input class="otp-box" type="text" maxlength="1" oninput="otp(this,0,'sk')" id="sk-o0">
+                  <input class="otp-box" type="text" maxlength="1" oninput="otp(this,1,'sk')" id="sk-o1">
+                  <input class="otp-box" type="text" maxlength="1" oninput="otp(this,2,'sk')" id="sk-o2">
+                  <input class="otp-box" type="text" maxlength="1" oninput="otp(this,3,'sk')" id="sk-o3">
+                  <input class="otp-box" type="text" maxlength="1" oninput="otp(this,4,'sk')" id="sk-o4">
+                  <input class="otp-box" type="text" maxlength="1" oninput="otp(this,5,'sk')" id="sk-o5">
+                </div>
+                <div style="font-size:13px;color:var(--muted2);margin-bottom:24px;">
+                  لم يصل؟ <span style="color:var(--c0);cursor:pointer;" onclick="toast('✅ تم الإرسال!')">إعادة إرسال</span>
+                  <span style="color:var(--muted);font-family:'JetBrains Mono',monospace;" id="sk-timer">(60s)</span>
+                </div>
+                <button class="btn btn-sk" onclick="registerDone('sk')">✅ تأكيد وإنشاء الحساب</button>
+                <div style="margin-top:12px;">
+                  <button class="btn btn-ghost btn-sm" style="width:auto;padding:10px 20px;" onclick="skStep(2)">← تعديل</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ EMPLOYER REGISTER ══════ -->
+        <div class="screen" id="s-employer-reg">
+          <div class="auth-screen">
+            <div class="auth-header">
+              <button class="auth-back" onclick="goScreen('role-pick')">←</button>
+              <div class="auth-progress">
+                <div class="prog-seg active" style="background:var(--c3);" id="em-p1"></div>
+                <div class="prog-seg" id="em-p2"></div>
+                <div class="prog-seg" id="em-p3"></div>
+              </div>
+              <div class="auth-title" id="em-reg-title">تسجيل شركتك 🏢</div>
+              <div class="auth-sub" id="em-reg-sub">الخطوة 1 من 3 — معلومات الشركة</div>
+            </div>
+            <div class="auth-body">
+              <div id="em-s1">
+                <div class="fgroup">
+                  <div class="flabel">اسم الشركة</div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">🏢</span>
+                    <input class="finput em" type="text" placeholder="مثال: Sonatrach Digital">
+                  </div>
+                </div>
+                <div class="frow">
+                  <div class="fgroup">
+                    <div class="flabel">القطاع</div>
+                    <div class="finput-wrap">
+                      <span class="finput-icon">🏭</span>
+                      <select class="fselect" style="background:#100c06;border-color:#3d2b10;">
+                        <option>تكنولوجيا</option><option>نفط وغاز</option><option>بناء</option><option>بنوك</option><option>صحة</option><option>تعليم</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="fgroup">
+                    <div class="flabel">الحجم</div>
+                    <div class="finput-wrap">
+                      <span class="finput-icon">👥</span>
+                      <select class="fselect" style="background:#100c06;border-color:#3d2b10;">
+                        <option>1-10</option><option>11-50</option><option selected>51-200</option><option>+500</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">الولاية</div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">📍</span>
+                    <select class="fselect" style="background:#100c06;border-color:#3d2b10;">
+                      <option>16 - الجزائر</option><option>31 - وهران</option><option>25 - قسنطينة</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">الموقع الإلكتروني</div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">🌐</span>
+                    <input class="finput em" type="url" placeholder="https://company.dz">
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">نبذة عن الشركة</div>
+                  <textarea class="finput em" rows="3" placeholder="أخبر المرشحين عن شركتكم..." style="resize:none;padding-top:12px;background:#100c06;border-color:#3d2b10;"></textarea>
+                </div>
+                <button class="btn btn-em" onclick="emStep(2)">التالي — بيانات المسؤول ←</button>
+              </div>
+
+              <div id="em-s2" style="display:none;">
+                <div class="frow">
+                  <div class="fgroup"><div class="flabel">الاسم</div><div class="finput-wrap"><span class="finput-icon">👤</span><input class="finput em" type="text" placeholder="الاسم"></div></div>
+                  <div class="fgroup"><div class="flabel">اللقب</div><div class="finput-wrap"><span class="finput-icon">✏️</span><input class="finput em" type="text" placeholder="اللقب"></div></div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">المنصب</div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">🎯</span>
+                    <select class="fselect" style="background:#100c06;border-color:#3d2b10;">
+                      <option>مدير الموارد البشرية</option><option>مدير عام</option><option>مسؤول توظيف</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">البريد المهني</div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">📧</span>
+                    <input class="finput em" type="email" placeholder="manager@company.dz" id="em-email" oninput="chkEmail('em-email','em-ec')">
+                    <div class="finput-suffix"><span id="em-ec"></span></div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">رقم الهاتف</div>
+                  <div class="frow3">
+                    <div class="phone-prefix">+213</div>
+                    <div class="finput-wrap"><span class="finput-icon">📱</span><input class="finput em" type="tel" placeholder="0XXX XX XX XX"></div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <div class="flabel">كلمة المرور</div>
+                  <div class="finput-wrap">
+                    <span class="finput-icon">🔒</span>
+                    <input class="finput em" type="password" placeholder="••••••••">
+                    <div class="finput-suffix"><button class="feye">👁️</button></div>
+                  </div>
+                </div>
+                <div class="fgroup">
+                  <label class="fcheck-label">
+                    <input type="checkbox" class="fcheck-input">
+                    <div class="fcheck-box" style="--checked-bg:var(--c3);"></div>
+                    أوافق على شروط الاستخدام
+                  </label>
+                </div>
+                <div style="display:flex;gap:10px;">
+                  <button class="btn btn-ghost btn-sm" style="width:auto;padding:12px 16px;" onclick="emStep(1)">←</button>
+                  <button class="btn btn-em" onclick="emStep(3)">التالي — التحقق ←</button>
+                </div>
+              </div>
+
+              <div id="em-s3" style="display:none;text-align:center;">
+                <div style="font-size:56px;margin:16px 0;">📧</div>
+                <div style="font-size:18px;font-weight:700;margin-bottom:6px;color:#f5ebe0;">تحقق من البريد المهني</div>
+                <div style="font-size:13px;color:#8a7060;margin-bottom:4px;">أرسلنا رمز إلى</div>
+                <div style="font-size:14px;color:var(--c3);font-family:'JetBrains Mono',monospace;margin-bottom:24px;">manager@company.dz</div>
+                <div class="otp-row">
+                  <input class="otp-box" style="background:#100c06;border-color:#3d2b10;" type="text" maxlength="1" id="em-o0" oninput="otp(this,0,'em')">
+                  <input class="otp-box" style="background:#100c06;border-color:#3d2b10;" type="text" maxlength="1" id="em-o1" oninput="otp(this,1,'em')">
+                  <input class="otp-box" style="background:#100c06;border-color:#3d2b10;" type="text" maxlength="1" id="em-o2" oninput="otp(this,2,'em')">
+                  <input class="otp-box" style="background:#100c06;border-color:#3d2b10;" type="text" maxlength="1" id="em-o3" oninput="otp(this,3,'em')">
+                  <input class="otp-box" style="background:#100c06;border-color:#3d2b10;" type="text" maxlength="1" id="em-o4" oninput="otp(this,4,'em')">
+                  <input class="otp-box" style="background:#100c06;border-color:#3d2b10;" type="text" maxlength="1" id="em-o5" oninput="otp(this,5,'em')">
+                </div>
+                <button class="btn btn-em" onclick="registerDone('em')">✅ تأكيد وتسجيل الشركة</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ LOGIN ══════ -->
+        <div class="screen" id="s-login">
+          <div class="auth-screen">
+            <div class="auth-header">
+              <button class="auth-back" onclick="goScreen('role-pick')">←</button>
+              <div class="auth-title">مرحباً بعودتك 👋</div>
+              <div class="auth-sub">سجّل دخولك لمتابعة مسيرتك</div>
+            </div>
+            <div class="auth-body">
+              <!-- Tab switcher -->
+              <div style="display:flex;gap:4px;background:var(--bg3);border-radius:12px;padding:4px;margin-bottom:20px;">
+                <button onclick="setLoginTab('sk',this)" style="flex:1;padding:9px;border-radius:9px;border:none;background:var(--c0);color:#080b12;font-size:13px;font-weight:700;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;" id="lt-sk">👤 باحث</button>
+                <button onclick="setLoginTab('em',this)" style="flex:1;padding:9px;border-radius:9px;border:none;background:transparent;color:var(--muted2);font-size:13px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;" id="lt-em">🏢 صاحب عمل</button>
+                <button onclick="setLoginTab('adm',this)" style="flex:1;padding:9px;border-radius:9px;border:none;background:transparent;color:var(--muted2);font-size:12px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;" id="lt-adm">🛡️ Admin</button>
+              </div>
+              <div class="fgroup">
+                <div class="flabel">البريد الإلكتروني</div>
+                <div class="finput-wrap">
+                  <span class="finput-icon">📧</span>
+                  <input class="finput" type="email" value="ahmed@example.com">
+                </div>
+              </div>
+              <div class="fgroup">
+                <div class="flabel">
+                  كلمة المرور
+                  <span style="font-size:12px;color:var(--c0);cursor:pointer;" onclick="toast('📧 تم إرسال رابط الاسترداد')">نسيت؟</span>
+                </div>
+                <div class="finput-wrap">
+                  <span class="finput-icon">🔒</span>
+                  <input class="finput" type="password" value="••••••••" id="lp">
+                  <div class="finput-suffix"><button class="feye" onclick="togEye('lp',this)">👁️</button></div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <label class="fcheck-label" style="margin:0;">
+                  <input type="checkbox" class="fcheck-input" checked>
+                  <div class="fcheck-box"></div>
+                  تذكّرني
+                </label>
+                <span style="font-size:12px;color:var(--muted2);font-family:'JetBrains Mono',monospace;">🔐 2FA</span>
+              </div>
+              <button class="btn btn-blue" onclick="doLogin()">🔐 دخول</button>
+              <div class="or-div">أو</div>
+              <div class="social-row">
+                <button class="social-btn" onclick="toast('🔜 قريباً')">
+                  <svg width="15" height="15" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  Google
+                </button>
+                <button class="social-btn" onclick="toast('🔜 قريباً')">
+                  <span style="color:#0077b5;font-weight:700;font-size:14px;">in</span> LinkedIn
+                </button>
+              </div>
+              <div style="text-align:center;font-size:14px;color:var(--muted2);">
+                ليس لديك حساب؟ <span style="color:var(--c0);font-weight:600;cursor:pointer;" onclick="goScreen('role-pick')">سجّل مجاناً</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ HOME (SEEKER) ══════ -->
+        <div class="screen" id="s-home">
+          <div class="home-screen">
+            <div class="home-topbar">
+              <div class="home-greeting">
+                <div class="home-greeting-sub">صباح الخير 👋</div>
+                <div class="home-greeting-name">سارة منصوري</div>
+              </div>
+              <div class="home-avatar" onclick="goTab('profile')">
+                👩‍💼
+                <div class="avatar-badge">3</div>
+              </div>
+            </div>
+
+            <div class="search-bar" onclick="toast('🔍 ابحث عن وظيفتك...')">
+              <div class="search-bar-icon">🔍</div>
+              <div class="search-bar-text">ابحث عن وظيفة، شركة...</div>
+              <div class="search-bar-filter">🎛️</div>
+            </div>
+
+            <!-- AI Banner -->
+            <div class="ai-banner" onclick="toast('🤖 AI يعمل على تحسين ملفك!')">
+              <div class="ai-banner-icon">🤖</div>
+              <div class="ai-banner-text">
+                <div class="ai-banner-title">ملفك يصل 78% — أكمل الباقي!</div>
+                <div class="ai-banner-desc">أضف 2 مهارات لمضاعفة ظهورك</div>
+              </div>
+              <span style="color:var(--c0);font-size:18px;">←</span>
+            </div>
+
+            <!-- Categories -->
+            <div class="section">
+              <div class="section-head"><div class="section-title">التخصصات</div></div>
+              <div class="hscroll">
+                <div class="cat-chip active">الكل</div>
+                <div class="cat-chip" onclick="toggleCat(this)">💻 تقنية</div>
+                <div class="cat-chip" onclick="toggleCat(this)">💰 مالية</div>
+                <div class="cat-chip" onclick="toggleCat(this)">🏗️ هندسة</div>
+                <div class="cat-chip" onclick="toggleCat(this)">📊 إدارة</div>
+                <div class="cat-chip" onclick="toggleCat(this)">🏥 صحة</div>
+                <div class="cat-chip" onclick="toggleCat(this)">📚 تعليم</div>
+              </div>
+            </div>
+
+            <!-- Featured jobs -->
+            <div class="section">
+              <div class="section-head">
+                <div class="section-title">🎯 مقترحة لك بالـ AI</div>
+                <div class="section-see" onclick="toast('عرض الكل')">عرض الكل</div>
+              </div>
+              <div class="hscroll">
+                <div class="job-card" onclick="goScreen('job-detail')">
+                  <div class="jc-top">
+                    <div class="jc-logo">🏭</div>
+                    <div style="flex:1;"><div class="jc-company">Sonatrach Digital</div><div class="jc-title">Senior React Dev</div></div>
+                    <div class="jc-match">94%<span class="jc-match-label">توافق</span></div>
+                  </div>
+                  <div class="jc-tags"><span class="jc-tag">React</span><span class="jc-tag">TS</span><span class="jc-tag">🏠 بعد</span></div>
+                  <div class="jc-footer">
+                    <div class="jc-sal">90K-120K دج</div>
+                    <div class="jc-time">منذ يومين</div>
+                    <button class="jc-save" onclick="event.stopPropagation();this.classList.toggle('saved')">🔖</button>
+                  </div>
+                </div>
+                <div class="job-card" onclick="goScreen('job-detail')">
+                  <div class="jc-top">
+                    <div class="jc-logo">📱</div>
+                    <div style="flex:1;"><div class="jc-company">Djezzy Tech</div><div class="jc-title">Full Stack Eng.</div></div>
+                    <div class="jc-match">88%<span class="jc-match-label">توافق</span></div>
+                  </div>
+                  <div class="jc-tags"><span class="jc-tag">Node</span><span class="jc-tag">Mongo</span><span class="jc-tag">🏢 حضوري</span></div>
+                  <div class="jc-footer">
+                    <div class="jc-sal">75K-95K دج</div>
+                    <div class="jc-time">منذ 4 أيام</div>
+                    <button class="jc-save" onclick="event.stopPropagation();this.classList.toggle('saved')">🔖</button>
+                  </div>
+                </div>
+                <div class="job-card" onclick="goScreen('job-detail')">
+                  <div class="jc-top">
+                    <div class="jc-logo">🏦</div>
+                    <div style="flex:1;"><div class="jc-company">BNA Banque</div><div class="jc-title">Lead Developer</div></div>
+                    <div class="jc-match">82%<span class="jc-match-label">توافق</span></div>
+                  </div>
+                  <div class="jc-tags"><span class="jc-tag">Python</span><span class="jc-tag">Django</span><span class="jc-tag">🔀 هجين</span></div>
+                  <div class="jc-footer">
+                    <div class="jc-sal">85K دج</div>
+                    <div class="jc-time">منذ أسبوع</div>
+                    <button class="jc-save" onclick="event.stopPropagation();this.classList.toggle('saved')">🔖</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Match bars -->
+            <div class="match-widget">
+              <div class="match-widget-title">📊 توافق مهاراتك مع السوق</div>
+              <div class="match-bars">
+                <div class="mb-row"><div class="mb-label">React.js</div><div class="mb-bar"><div class="mb-fill" style="width:95%;"></div></div><div class="mb-val">95</div></div>
+                <div class="mb-row"><div class="mb-label">Node.js</div><div class="mb-bar"><div class="mb-fill" style="width:88%;"></div></div><div class="mb-val">88</div></div>
+                <div class="mb-row"><div class="mb-label">Python</div><div class="mb-bar"><div class="mb-fill" style="width:72%;background:linear-gradient(90deg,var(--c3),#ff7c2a);"></div></div><div class="mb-val">72</div></div>
+                <div class="mb-row"><div class="mb-label">Docker</div><div class="mb-bar"><div class="mb-fill" style="width:54%;background:linear-gradient(90deg,var(--c4),rgba(255,71,87,.5));"></div></div><div class="mb-val">54</div></div>
+              </div>
+            </div>
+
+            <!-- Latest -->
+            <div class="section">
+              <div class="section-head"><div class="section-title">🆕 أحدث العروض</div><div class="section-see">الكل</div></div>
+              <div class="job-card-full" onclick="goScreen('job-detail')">
+                <div class="jc-logo">🔴</div>
+                <div class="jcf-left">
+                  <div class="jcf-company">Ooredoo DZ · وهران</div>
+                  <div class="jcf-title">Frontend Architect</div>
+                  <div class="jcf-tags"><span class="jc-tag">Vue.js</span><span class="jc-tag">GraphQL</span><span class="jc-tag">🏠 بعد</span></div>
+                </div>
+                <div class="jcf-right">
+                  <div class="jc-match" style="width:48px;">76%<span class="jc-match-label">توافق</span></div>
+                  <button class="jc-save" onclick="event.stopPropagation();this.classList.toggle('saved')">🔖</button>
+                </div>
+              </div>
+              <div class="job-card-full" onclick="goScreen('job-detail')">
+                <div class="jc-logo">💼</div>
+                <div class="jcf-left">
+                  <div class="jcf-company">Cevital · بجاية</div>
+                  <div class="jcf-title">Data Scientist</div>
+                  <div class="jcf-tags"><span class="jc-tag">Python</span><span class="jc-tag">ML</span><span class="jc-tag">🔀 هجين</span></div>
+                </div>
+                <div class="jcf-right">
+                  <div class="jc-match" style="width:48px;">71%<span class="jc-match-label">توافق</span></div>
+                  <button class="jc-save" onclick="event.stopPropagation();this.classList.toggle('saved')">🔖</button>
+                </div>
+              </div>
+            </div>
+            <div style="height:20px;"></div>
+          </div>
+        </div>
+
+        <!-- ══════ JOB DETAIL ══════ -->
+        <div class="screen" id="s-job-detail">
+          <div class="detail-screen">
+            <div class="detail-hero">
+              <button class="detail-back" onclick="goScreen('home')">←</button>
+              <div class="detail-logo">🏭</div>
+              <div class="detail-company">Sonatrach Digital · الجزائر العاصمة</div>
+              <div class="detail-title">Senior React Developer</div>
+              <div class="detail-tags">
+                <span class="detail-tag">🏠 عن بعد</span>
+                <span class="detail-tag">⏰ دوام كامل</span>
+                <span class="detail-tag">💼 خبرة 3-5 سنوات</span>
+                <span class="detail-tag">🎓 ليسانس+</span>
+              </div>
+            </div>
+            <div class="detail-match-card">
+              <div class="dm-pct">94%</div>
+              <div class="dm-desc">
+                <strong>توافق ممتاز مع ملفك!</strong>
+                7 من 8 متطلبات مطابقة — React وNode.js وTypeScript
+              </div>
+            </div>
+            <div class="detail-section">
+              <div class="ds-title">💰 الراتب</div>
+              <div style="font-size:22px;font-weight:700;color:var(--c0);font-family:'JetBrains Mono',monospace;">90,000 — 120,000 دج/شهر</div>
+            </div>
+            <div class="detail-section">
+              <div class="ds-title">📋 المهام</div>
+              <ul class="ds-list">
+                <li>تطوير وصيانة تطبيقات React.js عالية الأداء</li>
+                <li>التعاون مع فريق Backend لتكامل APIs</li>
+                <li>قيادة مراجعات الكود وضمان جودة المنتج</li>
+                <li>تحسين أداء التطبيق وتجربة المستخدم</li>
+              </ul>
+            </div>
+            <div class="detail-section">
+              <div class="ds-title">✅ المتطلبات</div>
+              <ul class="ds-list">
+                <li>3-5 سنوات خبرة في React.js وTypeScript</li>
+                <li>إتقان REST APIs وGraphQL</li>
+                <li>معرفة بـ Git وأدوات CI/CD</li>
+                <li>مستوى جيد في الفرنسية أو الإنجليزية</li>
+              </ul>
+            </div>
+            <div class="detail-section">
+              <div class="ds-title">🏢 عن الشركة</div>
+              <div class="ds-content">Sonatrach Digital هي الذراع الرقمية لمجموعة سوناطراك، تعمل على تحويل القطاع الطاقوي بالتكنولوجيا الحديثة وتضم أكثر من 500 موظف.</div>
+            </div>
+            <div style="height:90px;"></div>
+          </div>
+          <div class="detail-footer">
+            <button class="btn btn-outline btn-sm" style="width:auto;padding:12px 16px;" onclick="toast('🔖 تم الحفظ!')">🔖</button>
+            <button class="btn btn-sk" onclick="toast('✅ تم إرسال طلبك بنجاح!')">📨 تقدّم الآن</button>
+          </div>
+        </div>
+
+        <!-- ══════ PROFILE ══════ -->
+        <div class="screen" id="s-profile">
+          <div class="profile-screen">
+            <div class="profile-hero">
+              <div class="profile-avatar" onclick="toast('📸 تغيير الصورة')">
+                👩‍💼
+                <div class="profile-edit-badge">✏️</div>
+              </div>
+              <div class="profile-name">سارة منصوري</div>
+              <div class="profile-role">مطوّرة Full Stack</div>
+              <div class="profile-loc">📍 الجزائر العاصمة · 🌐 تعمل عن بُعد</div>
+            </div>
+            <div class="profile-stats">
+              <div class="pstat"><div class="pstat-val">14</div><div class="pstat-label">اقتراح</div></div>
+              <div class="pstat"><div class="pstat-val">6</div><div class="pstat-label">طلب</div></div>
+              <div class="pstat"><div class="pstat-val">248</div><div class="pstat-label">مشاهدة</div></div>
+            </div>
+            <div class="completion-card">
+              <div class="comp-label"><span>اكتمال الملف</span><span class="comp-val">78%</span></div>
+              <div class="comp-bar"><div class="comp-fill" style="width:78%;"></div></div>
+              <div class="comp-tip">💡 أضف <span>شهادة Docker</span> لرفع الاكتمال إلى 90%</div>
+            </div>
+            <div class="profile-section">
+              <div class="ps-header">💼 الخبرات<span class="ps-edit">+ إضافة</span></div>
+              <div class="exp-item"><div class="exp-dot"></div><div><div class="exp-title">Full Stack Developer</div><div class="exp-company">Djezzy Tech</div><div class="exp-period">2022 — الآن</div></div></div>
+              <div class="exp-item"><div class="exp-dot" style="background:var(--muted);"></div><div><div class="exp-title">Frontend Developer</div><div class="exp-company">Startups DZ</div><div class="exp-period">2020 — 2022</div></div></div>
+            </div>
+            <div class="profile-section">
+              <div class="ps-header">🎓 التعليم<span class="ps-edit">+ إضافة</span></div>
+              <div class="exp-item"><div class="exp-dot"></div><div><div class="exp-title">ماجستير هندسة البرمجيات</div><div class="exp-company">جامعة بومرداس</div><div class="exp-period">2018 — 2020</div></div></div>
+            </div>
+            <div class="profile-section">
+              <div class="ps-header">🚀 المهارات<span class="ps-edit">تعديل</span></div>
+              <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;">
+                <span class="stag">React.js</span><span class="stag">Node.js</span><span class="stag">TypeScript</span><span class="stag">Python</span><span class="stag">PostgreSQL</span>
+              </div>
+            </div>
+            <div style="padding:0 16px 32px;">
+              <div style="padding:16px;background:linear-gradient(135deg,rgba(0,196,163,.1),rgba(79,142,247,.08));border:1px solid rgba(0,196,163,.2);border-radius:16px;text-align:center;">
+                <div style="font-size:20px;margin-bottom:8px;">⚡ عزّز ملفك</div>
+                <div style="font-size:13px;color:var(--muted2);margin-bottom:14px;">احصل على 3× مشاهدات أكثر من الشركات</div>
+                <button class="btn btn-sk btn-sm" onclick="toast('💎 Boost مفعّل! ستظهر للشركات أولاً')">تفعيل Boost — 500 دج</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ APPLICATIONS ══════ -->
+        <div class="screen" id="s-applications">
+          <div class="apps-screen">
+            <div class="screen-topbar">📋 طلباتي</div>
+            <div class="apps-tabs">
+              <div class="app-tab active" onclick="setAppTab(this)">الكل (6)</div>
+              <div class="app-tab" onclick="setAppTab(this)">🔍 مراجعة (2)</div>
+              <div class="app-tab" onclick="setAppTab(this)">📞 مقابلة (1)</div>
+              <div class="app-tab" onclick="setAppTab(this)">✅ قُبل (1)</div>
+              <div class="app-tab" onclick="setAppTab(this)">❌ رُفض (1)</div>
+            </div>
+            <div class="app-item" onclick="goScreen('job-detail')">
+              <div class="ai-top">
+                <div class="ai-logo">🏭</div>
+                <div class="ai-info"><div class="ai-title">Senior React Dev</div><div class="ai-company">Sonatrach Digital</div></div>
+                <div class="ai-status st-interview">📞 مقابلة</div>
+              </div>
+              <div class="ai-steps">
+                <div class="ai-step"><div class="ai-step-dot done"></div><div class="ai-step-line done"></div></div>
+                <div class="ai-step"><div class="ai-step-dot done"></div><div class="ai-step-line done"></div></div>
+                <div class="ai-step"><div class="ai-step-dot active"></div><div class="ai-step-line"></div></div>
+                <div class="ai-step"><div class="ai-step-dot"></div><div class="ai-step-line"></div></div>
+                <div class="ai-step"><div class="ai-step-dot"></div></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px;font-family:'JetBrains Mono',monospace;">
+                <span>طلب</span><span>مراجعة</span><span>مقابلة</span><span>عرض</span><span>تعيين</span>
+              </div>
+            </div>
+            <div class="app-item">
+              <div class="ai-top">
+                <div class="ai-logo">✅</div>
+                <div class="ai-info"><div class="ai-title">Lead Developer</div><div class="ai-company">Djezzy Tech</div></div>
+                <div class="ai-status st-accepted">✅ قُبل!</div>
+              </div>
+              <div style="margin-top:10px;padding:10px 12px;background:rgba(0,196,163,0.08);border-radius:10px;font-size:13px;color:var(--muted2);">
+                🎉 تهانينا! تواصل فريق HR معك خلال 48 ساعة
+              </div>
+            </div>
+            <div class="app-item">
+              <div class="ai-top">
+                <div class="ai-logo">🏦</div>
+                <div class="ai-info"><div class="ai-title">Data Analyst</div><div class="ai-company">BNA Banque</div></div>
+                <div class="ai-status st-review">🔍 مراجعة</div>
+              </div>
+            </div>
+            <div class="app-item">
+              <div class="ai-top">
+                <div class="ai-logo">🔴</div>
+                <div class="ai-info"><div class="ai-title">Frontend Dev</div><div class="ai-company">Ooredoo DZ</div></div>
+                <div class="ai-status" style="background:rgba(255,71,87,0.12);color:var(--c4);">❌ رُفض</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ NOTIFICATIONS ══════ -->
+        <div class="screen" id="s-notifications">
+          <div class="notifs-screen">
+            <div class="screen-topbar" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>🔔 الإشعارات</span>
+              <span style="font-size:13px;color:var(--c0);cursor:pointer;" onclick="toast('✅ تم تعليم الكل مقروءاً')">تعليم كل مقروء</span>
+            </div>
+            <div class="notif-item unread">
+              <div class="notif-avatar" style="background:rgba(0,196,163,.12);">🤖</div>
+              <div class="notif-body">
+                <div class="notif-title">وظيفة جديدة مطابقة بـ 97%!</div>
+                <div class="notif-desc">Senior Developer في Sonatrach — هذه الوظيفة تناسب مهاراتك بشكل ممتاز</div>
+                <div class="notif-time">منذ 5 دقائق</div>
+              </div>
+              <div class="notif-unread-dot"></div>
+            </div>
+            <div class="notif-item unread">
+              <div class="notif-avatar" style="background:rgba(79,142,247,.12);">📞</div>
+              <div class="notif-body">
+                <div class="notif-title">مقابلة مجدولة!</div>
+                <div class="notif-desc">Sonatrach Digital دعتك لمقابلة غداً الساعة 10:00 صباحاً عبر Zoom</div>
+                <div class="notif-time">منذ 2 ساعة</div>
+              </div>
+              <div class="notif-unread-dot"></div>
+            </div>
+            <div class="notif-item unread">
+              <div class="notif-avatar" style="background:rgba(245,166,35,.12);">👀</div>
+              <div class="notif-body">
+                <div class="notif-title">شركة اطلعت على ملفك</div>
+                <div class="notif-desc">Cevital Digital شاهدت ملفك الشخصي للتو</div>
+                <div class="notif-time">منذ 4 ساعات</div>
+              </div>
+              <div class="notif-unread-dot"></div>
+            </div>
+            <div class="notif-item">
+              <div class="notif-avatar" style="background:rgba(0,196,163,.1);">✅</div>
+              <div class="notif-body">
+                <div class="notif-title">تم قبول طلبك!</div>
+                <div class="notif-desc">تهانينا! Djezzy Tech قبلت طلبك لوظيفة Lead Developer</div>
+                <div class="notif-time">أمس</div>
+              </div>
+            </div>
+            <div class="notif-item">
+              <div class="notif-avatar" style="background:rgba(255,71,87,.1);">⚡</div>
+              <div class="notif-body">
+                <div class="notif-title">اكمل ملفك الشخصي</div>
+                <div class="notif-desc">أضف مهاراتك المتبقية لزيادة ظهورك في نتائج البحث بنسبة 40%</div>
+                <div class="notif-time">منذ يومين</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══════ EMPLOYER HOME ══════ -->
+        <div class="screen" id="s-emp-home">
+          <div class="emp-home">
+            <div class="emp-topbar">
+              <div>
+                <div style="font-size:13px;color:#8a7060;">مرحباً 🏢</div>
+                <div style="font-size:19px;font-weight:700;color:#f5ebe0;margin-top:2px;">Sonatrach Digital</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <button onclick="toast('+ وظيفة جديدة')" style="padding:9px 16px;border-radius:10px;background:var(--c3);color:#080b12;font-weight:700;font-size:13px;border:none;cursor:pointer;font-family:'IBM Plex Sans Arabic',sans-serif;">+ وظيفة</button>
+                <div class="emp-avatar">🏢</div>
+              </div>
+            </div>
+
+            <!-- KPIs -->
+            <div class="emp-kpi-scroll">
+              <div class="emp-kpi-card"><div class="ekc-icon">👀</div><div class="ekc-val">12.4K</div><div class="ekc-label">مشاهدات</div></div>
+              <div class="emp-kpi-card"><div class="ekc-icon">📩</div><div class="ekc-val">142</div><div class="ekc-label">طلبات</div></div>
+              <div class="emp-kpi-card"><div class="ekc-icon">📅</div><div class="ekc-val">18</div><div class="ekc-label">مقابلات</div></div>
+              <div class="emp-kpi-card"><div class="ekc-icon">✅</div><div class="ekc-val">7</div><div class="ekc-label">توظيف</div></div>
+            </div>
+
+            <div style="padding:0 16px;font-size:16px;font-weight:700;margin-bottom:12px;color:#f5ebe0;">💼 عروض العمل النشطة</div>
+            <div class="emp-job-card">
+              <div class="ejc-top">
+                <div class="ejc-icon">💻</div>
+                <div><div class="ejc-title">Senior Software Engineer</div><div class="ejc-meta">الجزائر · نُشر منذ 3 أيام</div></div>
+                <span style="margin-right:auto;padding:4px 10px;border-radius:6px;background:rgba(0,196,163,.12);color:var(--c0);font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;">نشط</span>
+              </div>
+              <div class="ejc-stats">
+                <div class="ejcs-item"><div class="ejcs-val">248</div><div class="ejcs-label">مشاهدة</div></div>
+                <div class="ejcs-item"><div class="ejcs-val">42</div><div class="ejcs-label">طلب</div></div>
+                <div class="ejcs-item"><div class="ejcs-val">8</div><div class="ejcs-label">مختار</div></div>
+              </div>
+            </div>
+            <div class="emp-job-card">
+              <div class="ejc-top">
+                <div class="ejc-icon">📊</div>
+                <div><div class="ejc-title">Data Analyst</div><div class="ejc-meta">عن بعد · مميز ⭐</div></div>
+                <span style="margin-right:auto;padding:4px 10px;border-radius:6px;background:rgba(245,166,35,.12);color:var(--c3);font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;">مميز</span>
+              </div>
+              <div class="ejc-stats">
+                <div class="ejcs-item"><div class="ejcs-val">512</div><div class="ejcs-label">مشاهدة</div></div>
+                <div class="ejcs-item"><div class="ejcs-val">78</div><div class="ejcs-label">طلب</div></div>
+                <div class="ejcs-item"><div class="ejcs-val">15</div><div class="ejcs-label">مختار</div></div>
+              </div>
+            </div>
+
+            <div style="padding:0 16px;font-size:16px;font-weight:700;margin:12px 0;color:#f5ebe0;">🏆 أفضل المرشحين — AI</div>
+            <div class="cand-card" onclick="toast('👤 عرض ملف المرشح')">
+              <div class="cc-avatar">👩‍💻</div>
+              <div class="cc-info"><div class="cc-name">سارة منصوري</div><div class="cc-role">Full Stack · 5 سنوات</div></div>
+              <div><div class="cc-score">94%</div><div class="cc-score-label">توافق</div></div>
+              <div class="cc-actions">
+                <button class="cc-btn" onclick="event.stopPropagation();toast('👁️ عرض CV')">👁️</button>
+                <button class="cc-btn" onclick="event.stopPropagation();toast('📞 جدولة مقابلة')">📞</button>
+              </div>
+            </div>
+            <div class="cand-card">
+              <div class="cc-avatar">👨‍💻</div>
+              <div class="cc-info"><div class="cc-name">أحمد بلعيد</div><div class="cc-role">Backend · 7 سنوات</div></div>
+              <div><div class="cc-score">91%</div><div class="cc-score-label">توافق</div></div>
+              <div class="cc-actions">
+                <button class="cc-btn" onclick="event.stopPropagation();toast('👁️ عرض CV')">👁️</button>
+                <button class="cc-btn" onclick="event.stopPropagation();toast('📞 جدولة مقابلة')">📞</button>
+              </div>
+            </div>
+            <div class="cand-card">
+              <div class="cc-avatar">👨‍🔬</div>
+              <div class="cc-info"><div class="cc-name">كريم بوزيدي</div><div class="cc-role">DevOps · 4 سنوات</div></div>
+              <div><div class="cc-score">87%</div><div class="cc-score-label">توافق</div></div>
+              <div class="cc-actions">
+                <button class="cc-btn" onclick="event.stopPropagation();toast('👁️ عرض CV')">👁️</button>
+                <button class="cc-btn" onclick="event.stopPropagation();toast('✅ قبول')">✅</button>
+              </div>
+            </div>
+            <div style="height:24px;"></div>
+          </div>
+        </div>
+
+        <!-- ══════ SUCCESS SK ══════ -->
+        <div class="screen" id="s-success-sk">
+          <div class="success-screen">
+            <div class="success-icon-big">🎉</div>
+            <div class="success-title">أهلاً بك في تَوظِيف!</div>
+            <div class="success-desc">حسابك جاهز. ابدأ رحلتك للعثور على وظيفة أحلامك في الجزائر.</div>
+            <div class="success-steps">
+              <div class="ss-item"><div class="ss-num" style="background:rgba(0,196,163,.15);color:var(--c0);">1</div><div class="ss-text"><strong>اكمل ملفك</strong> لزيادة ظهورك للشركات</div></div>
+              <div class="ss-item"><div class="ss-num" style="background:rgba(0,196,163,.15);color:var(--c0);">2</div><div class="ss-text"><strong>ارفع CV</strong> وسيحلله الـ AI تلقائياً</div></div>
+              <div class="ss-item"><div class="ss-num" style="background:rgba(0,196,163,.15);color:var(--c0);">3</div><div class="ss-text"><strong>استلم اقتراحات</strong> وظائف ذكية يومياً</div></div>
+            </div>
+            <button class="btn btn-sk" onclick="goScreen('home')">🚀 انتقل للرئيسية</button>
+          </div>
+        </div>
+
+        <!-- ══════ SUCCESS EM ══════ -->
+        <div class="screen" id="s-success-em">
+          <div class="success-screen" style="background:#100c06;">
+            <div class="success-icon-big">🏆</div>
+            <div class="success-title" style="background:linear-gradient(90deg,var(--c3),#ff7c2a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">شركتك مسجّلة!</div>
+            <div class="success-desc" style="color:#8a7060;">سيراجع الفريق بياناتك خلال 24 ساعة لتفعيل حسابك الكامل.</div>
+            <div class="success-steps">
+              <div class="ss-item" style="background:#1a1208;border-color:rgba(245,166,35,.15);"><div class="ss-num" style="background:rgba(245,166,35,.15);color:var(--c3);">1</div><div class="ss-text" style="color:#8a7060;"><strong style="color:#f5ebe0;">أكمل صفحة شركتك</strong> لجذب أفضل المواهب</div></div>
+              <div class="ss-item" style="background:#1a1208;border-color:rgba(245,166,35,.15);"><div class="ss-num" style="background:rgba(245,166,35,.15);color:var(--c3);">2</div><div class="ss-text" style="color:#8a7060;"><strong style="color:#f5ebe0;">انشر أول وظيفة</strong> وستظهر فوراً</div></div>
+              <div class="ss-item" style="background:#1a1208;border-color:rgba(245,166,35,.15);"><div class="ss-num" style="background:rgba(245,166,35,.15);color:var(--c3);">3</div><div class="ss-text" style="color:#8a7060;"><strong style="color:#f5ebe0;">استلم طلبات</strong> مرتبة بالـ AI</div></div>
+            </div>
+            <button class="btn btn-em" onclick="goScreen('emp-home')">💼 انتقل للوحة التحكم</button>
+          </div>
+        </div>
+
+      </div><!-- /viewport -->
+
+      <!-- BOTTOM NAV (hidden on non-main screens) -->
+      <div class="bottom-nav" id="bottom-nav" style="display:none;">
+        <div class="bnav-item active" id="tab-home" onclick="goTab('home')">
+          <div class="bnav-icon">🏠</div>
+          <div class="bnav-label">الرئيسية</div>
+        </div>
+        <div class="bnav-item" id="tab-applications" onclick="goTab('applications')">
+          <div class="bnav-icon" style="position:relative;">📋<div class="bnav-dot" style="display:none;" id="apps-dot"></div></div>
+          <div class="bnav-label">طلباتي</div>
+        </div>
+        <div class="bnav-item" id="tab-notifications" onclick="goTab('notifications')">
+          <div class="bnav-icon" style="position:relative;">🔔<div class="bnav-dot" id="notif-dot"></div></div>
+          <div class="bnav-label">إشعارات</div>
+        </div>
+        <div class="bnav-item" id="tab-profile" onclick="goTab('profile')">
+          <div class="bnav-icon">👤</div>
+          <div class="bnav-label">ملفي</div>
+        </div>
+      </div>
+
+    </div><!-- /phone -->
+
+    <!-- TOAST inside phone -->
+    <div class="toast" id="phone-toast">
+      <span id="toast-icon">✅</span>
+      <span id="toast-text">رسالة</span>
+    </div>
+  </div>
+
+</div><!-- /desktop -->
+
+<script>
+/* ──────────── STATE ──────────── */
+let currentScreen = 'splash';
+let skCurrentStep = 1;
+let emCurrentStep = 1;
+let obSlide = 0;
+let loginRole = 'sk';
+const mainTabs = ['home','applications','notifications','profile','emp-home'];
+const tabScreens = {home:'home',applications:'applications',notifications:'notifications',profile:'profile'};
+
+/* ──────────── SCREEN ROUTER ──────────── */
+function goScreen(id) {
+  const prev = document.getElementById('s-' + currentScreen);
+  const next = document.getElementById('s-' + id);
+  if (!next || id === currentScreen) return;
+
+  if (prev) prev.classList.remove('active');
+  next.classList.remove('slide-in','slide-out','slide-in-left');
+  next.classList.add('active','slide-in');
+  currentScreen = id;
+
+  // Scroll to top
+  next.scrollTop = 0;
+
+  // Bottom nav visibility
+  const nav = document.getElementById('bottom-nav');
+  const showNav = ['home','applications','notifications','profile'].includes(id);
+  nav.style.display = showNav ? 'flex' : 'none';
+
+  // Status bar color
+  const sb = document.getElementById('status-bar');
+  if (['splash','onboarding'].includes(id)) sb.style.color = 'rgba(255,255,255,0.4)';
+  else if (id.includes('employer') || id === 'emp-home' || id === 'success-em') sb.style.color = 'rgba(245,166,35,0.7)';
+  else if (id === 'home' || id === 'job-detail' || id === 'profile' || id === 'success-sk') sb.style.color = 'rgba(0,196,163,0.8)';
+  else sb.style.color = 'rgba(154,170,187,0.9)';
+
+  // Sync sidebar pills
+  const pillId = 'pill-' + id;
+  document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+  const pill = document.getElementById(pillId);
+  if (pill) pill.classList.add('active');
+
+  // Active bottom tab
+  document.querySelectorAll('.bnav-item').forEach(t => t.classList.remove('active'));
+  const tabEl = document.getElementById('tab-' + id);
+  if (tabEl) tabEl.classList.add('active');
+}
+
+function goTab(tab) {
+  goScreen(tab);
+  document.querySelectorAll('.bnav-item').forEach(t => t.classList.remove('active'));
+  const el = document.getElementById('tab-' + tab);
+  if (el) el.classList.add('active');
+}
+
+/* Sidebar nav */
+function activatePill(id) {
+  document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+/* ──────────── ONBOARDING ──────────── */
+function obNext() {
+  if (obSlide < 2) {
+    document.getElementById('ob' + obSlide).classList.remove('active');
+    document.getElementById('ob' + obSlide).classList.add('prev');
+    obSlide++;
+    document.getElementById('ob' + obSlide).classList.add('active');
+    document.querySelectorAll('.ob-dot').forEach((d,i) => {
+      d.classList.toggle('active', i === obSlide);
+    });
+    if (obSlide === 2) document.getElementById('ob-next-btn').textContent = 'ابدأ الآن';
+  } else {
+    goScreen('role-pick');
+  }
+}
+
+/* ──────────── SEEKER STEPS ──────────── */
+function skStep(n) {
+  document.getElementById('sk-s' + skCurrentStep).style.display = 'none';
+  skCurrentStep = n;
+
+  // Progress bars
+  for (let i = 1; i <= 3; i++) {
+    const seg = document.getElementById('sk-p' + i);
+    if (!seg) continue;
+    seg.classList.remove('active','done');
+    if (i < n) seg.classList.add('done');
+    else if (i === n) seg.classList.add('active');
+  }
+
+  const titles = {1:'إنشاء حسابك 👤',2:'ملفك المهني 📋',3:'التحقق ✉️'};
+  const subs = {1:'الخطوة 1 من 3 — البيانات الأساسية',2:'الخطوة 2 من 3 — معلومات مهنية',3:'الخطوة 3 من 3 — تأكيد البريد'};
+  document.getElementById('sk-reg-title').textContent = titles[n];
+  document.getElementById('sk-reg-sub').textContent = subs[n];
+
+  if (n === 3) {
+    const email = document.getElementById('sk-em')?.value || 'ahmed@example.com';
+    document.getElementById('sk-em-disp').textContent = email;
+    startTimer('sk-timer');
+    document.getElementById('sk-o0')?.focus();
+  }
+
+  document.getElementById('sk-s' + n).style.display = '';
+  document.querySelector('#s-seeker-reg').scrollTop = 0;
+}
+
+/* ──────────── EMPLOYER STEPS ──────────── */
+function emStep(n) {
+  document.getElementById('em-s' + emCurrentStep).style.display = 'none';
+  emCurrentStep = n;
+
+  for (let i = 1; i <= 3; i++) {
+    const seg = document.getElementById('em-p' + i);
+    if (!seg) continue;
+    seg.style.background = '';
+    seg.classList.remove('active');
+    if (i <= n) { seg.style.background = 'var(--c3)'; seg.classList.add('active'); }
+  }
+
+  const titles = {1:'تسجيل شركتك 🏢',2:'بيانات المسؤول 👤',3:'التحقق ✉️'};
+  const subs = {1:'الخطوة 1 من 3 — معلومات الشركة',2:'الخطوة 2 من 3 — مسؤول الحساب',3:'الخطوة 3 من 3 — تأكيد البريد'};
+  document.getElementById('em-reg-title').textContent = titles[n];
+  document.getElementById('em-reg-sub').textContent = subs[n];
+
+  document.getElementById('em-s' + n).style.display = '';
+  document.querySelector('#s-employer-reg').scrollTop = 0;
+}
+
+/* ──────────── REGISTER DONE ──────────── */
+function registerDone(type) {
+  toast('⏳ جارٍ إنشاء الحساب...');
+  setTimeout(() => {
+    goScreen(type === 'sk' ? 'success-sk' : 'success-em');
+  }, 1500);
+}
+
+/* ──────────── LOGIN ──────────── */
+function setLoginTab(role, btn) {
+  loginRole = role;
+  ['sk','em','adm'].forEach(r => {
+    const el = document.getElementById('lt-' + r);
+    if (!el) return;
+    el.style.background = 'transparent';
+    el.style.color = 'var(--muted2)';
+  });
+  const colors = {sk:'var(--c0)',em:'var(--c3)',adm:'var(--c2)'};
+  const textColors = {sk:'#080b12',em:'#080b12',adm:'#fff'};
+  btn.style.background = colors[role];
+  btn.style.color = textColors[role];
+}
+
+function doLogin() {
+  toast('⏳ جارٍ تسجيل الدخول...');
+  setTimeout(() => {
+    toast('✅ مرحباً بعودتك!');
+    setTimeout(() => {
+      goScreen(loginRole === 'em' ? 'emp-home' : 'home');
+      if (loginRole !== 'em') {
+        document.getElementById('bottom-nav').style.display = 'flex';
+        goTab('home');
+      }
+    }, 600);
+  }, 1200);
+}
+
+/* ──────────── OTP ──────────── */
+function otp(input, idx, prefix) {
+  if (input.value) {
+    input.classList.add('filled');
+    const next = document.getElementById(prefix + '-o' + (idx+1));
+    if (next) next.focus();
+    // Check if all filled
+    const all = Array.from({length:6},(_,i) => document.getElementById(prefix+'-o'+i));
+    if (all.every(b => b && b.value)) toast('✅ رمز صحيح!');
+  }
+}
+
+/* ──────────── SKILLS ──────────── */
+function addTag(e) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const input = document.getElementById('ski');
+    const val = input.value.trim();
+    if (!val) return;
+    const wrap = input.closest('.skill-wrap');
+    const tag = document.createElement('span');
+    tag.className = 'stag';
+    tag.innerHTML = `${val} <button class="stag-remove" onclick="this.closest('.stag').remove()">×</button>`;
+    wrap.insertBefore(tag, input);
+    input.value = '';
+  }
+}
+
+function addTagDirect(el) {
+  const input = document.getElementById('ski');
+  const wrap = input.closest('.skill-wrap');
+  const tag = document.createElement('span');
+  tag.className = 'stag';
+  tag.innerHTML = `${el.textContent} <button class="stag-remove" onclick="this.closest('.stag').remove()">×</button>`;
+  wrap.insertBefore(tag, input);
+  el.style.opacity = '0.3';
+  el.style.pointerEvents = 'none';
+}
+
+/* ──────────── VALIDATION ──────────── */
+function chkEmail(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
+  if (input.value.length > 3) {
+    icon.textContent = valid ? '✅' : '❌';
+    input.className = input.className.replace(' ok','').replace(' err','') + (valid ? ' ok' : ' err');
+  } else { icon.textContent = ''; }
+}
+
+function togEye(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁️' : '🙈';
+}
+
+function pwStrength(inputId, prefix) {
+  const val = document.getElementById(inputId)?.value || '';
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const colors = ['','#ff4757','#f5a623','#00c4a3','#00c4a3'];
+  for (let i = 1; i <= 4; i++) {
+    const bar = document.getElementById('sk-ps' + i);
+    if (bar) bar.style.background = i <= score ? colors[score] : 'var(--bg3)';
+  }
+}
+
+/* ──────────── TIMER ──────────── */
+function startTimer(id) {
+  let sec = 60;
+  const el = document.getElementById(id);
+  if (!el) return;
+  const t = setInterval(() => {
+    sec--;
+    el.textContent = sec > 0 ? `(${sec}s)` : '';
+    if (sec <= 0) clearInterval(t);
+  }, 1000);
+}
+
+/* ──────────── CATEGORIES ──────────── */
+function toggleCat(el) {
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ──────────── APP TABS ──────────── */
+function setAppTab(el) {
+  document.querySelectorAll('.app-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* ──────────── TOAST ──────────── */
+function toast(msg) {
+  const t = document.getElementById('phone-toast');
+  const icon = msg.split(' ')[0];
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-text').textContent = msg.substring(icon.length + 1);
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+/* ──────────── AUTO-START ──────────── */
+window.addEventListener('load', () => {
+  // Splash auto-advance
+  setTimeout(() => goScreen('onboarding'), 3000);
+});
+
+/* ──────────── SIDEBAR CLICKS (desktop) ──────────── */
+// Already handled inline via goScreen()
+</script>
+</body>
+</html>
