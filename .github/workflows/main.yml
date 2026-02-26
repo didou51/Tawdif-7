@@ -89,6 +89,8 @@ jobs:
         rootProject.name = "tawdhif"
         include ':app'
         EOF
+        echo "android.useAndroidX=true" > gradle.properties
+        echo "android.enableJetifier=true" >> gradle.properties
 
         cat > build.gradle << 'EOF'
         plugins {
